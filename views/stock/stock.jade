@@ -1,0 +1,221 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 Stock View
+      .btn-group
+        button.btn.btn-outline-primary#exportBtn
+          i.fas.fa-download.me-2
+          | Export Stock Report
+    
+    // Summary Card
+    .row.mb-4
+      .col-md-4
+        .card.bg-primary.text-white
+          .card-body
+            .d-flex.justify-content-between
+              div
+                h4.card-title Total Assets in Stock
+                h2.display-6= totalAssets
+              .align-self-center
+                i.fas.fa-boxes.fa-2x
+      .col-md-4
+        .card.bg-success.text-white
+          .card-body
+            .d-flex.justify-content-between
+              div
+                h4.card-title Total Value
+                h2.display-6 ₹#{totalValue.toFixed(2)}
+              .align-self-center
+                i.fas.fa-rupee-sign.fa-2x
+      .col-md-4
+        .card.bg-info.text-white
+          .card-body
+            .d-flex.justify-content-between
+              div
+                h4.card-title Branches with Stock
+                h2.display-6= Object.keys(assetsByBranch).length
+              .align-self-center
+                i.fas.fa-building.fa-2x
+    
+    // Branch-wise Stock Section
+    each branchData, branch in assetsByBranch
+      .card.mb-4
+        .card-header.d-flex.justify-content-between.align-items-center
+          h5.mb-0
+            i.fas.fa-building.me-2
+            = branch
+          //  showing number of items in this branch 
+          span.badge.bg-primary= branchData.count + ' items'
+        .card-body
+          .row
+            .col-md-8
+              .table-responsive
+                table#stockTable.table.table-sm.table-striped
+                  thead
+                    tr
+                      th Asset Tag
+                      th Name
+                      th Category
+                      th Serial Number
+                      th Value
+                  tbody
+
+                    each asset in branchData.assets
+                      tr
+
+                        td= asset.asset_tag || 'N/A'
+
+                        td
+                          a(href='/assets/' + asset.id)= asset.name
+                        td= asset.Category ? asset.Category.name : 'Uncategorized'
+                        td= asset.serial_number || 'N/A'
+                        td= asset.current_value ? `₹${parseFloat(asset.current_value).toFixed(2)}` : (asset.purchase_cost ? `₹${parseFloat(asset.purchase_cost).toFixed(2)}` : 'N/A')
+            .col-md-4
+              .card.bg-light
+                .card-header
+                  h6.mb-0 Branch Summary
+                .card-body
+                  .row.mb-2
+                    .col-6.fw-bold Total Items:
+                    .col-6.text-end= branchData.count
+                  .row
+                    .col-6.fw-bold Total Value:
+                    .col-6.text-end ₹#{branchData.totalValue.toFixed(2)}
+    
+    // Category Summary
+    .card
+      .card-header
+        h5.mb-0 Category-wise Summary
+      .card-body
+        // Grid for card
+        .row
+          each count, category in categorySummary
+            .col-md-3.col-sm-6.mb-3
+              .card.border
+                .card-body.text-center
+                  h5.card-title= category
+                  h3.text-primary= count
+
+// JavaScript Sfor interactive functionality
+block scripts
+  script.
+    // Waiting page to fully load before running JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize stock tables
+      $('#stockTable').DataTable({
+        pageLength: 25 
+      });
+      
+      // export button for pdf generation
+      document.getElementById('exportBtn').addEventListener('click', function() {
+        const originalText = this.innerHTML;
+        this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating PDF...';
+        this.disabled = true;
+        
+        //take whole page as pdf 
+        const element = document.querySelector('.container-fluid');
+        const { jsPDF } = window.jspdf;
+        
+        // setup for pdf generation
+        const opt = {
+          margin: 10,
+          filename: `stock_report_${new Date().toISOString().split('T')[0]}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { 
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            letterRendering: true
+          },
+          jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'landscape',
+            compress: true
+          }
+        };
+        
+        // Generate PDF from the current page
+        html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        }).then(canvas => {
+          const imgData = canvas.toDataURL('image/jpeg', 0.98);
+          const pdf = new jsPDF('landscape', 'mm', 'a4');
+          
+          const imgWidth = 297; // A4 landscape width in mm
+          const pageHeight = 210; // A4 landscape height in mm
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          let heightLeft = imgHeight;
+          let position = 0;
+          
+          // Add first page
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+          
+          // \add extra page if needed 
+          while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+          }
+          
+          // save button for pdf 
+          pdf.save(`stock_report_${new Date().toISOString().split('T')[0]}.pdf`);
+          
+          // Restore button
+          this.innerHTML = originalText;
+          this.disabled = false;
+          
+          // Show success message for pdf downloaded 
+          const successAlert = document.createElement('div');
+          successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+          successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+          successAlert.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            Stock report exported successfully!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          document.body.appendChild(successAlert);
+          
+          // Auto-remove success message after 1.5 seconds
+          setTimeout(() => {
+            if (successAlert.parentNode) {
+              successAlert.parentNode.removeChild(successAlert);
+            }
+          }, 1500);
+          
+        }).catch(error => {
+          console.error('Error generating PDF:', error);
+          
+         
+          this.innerHTML = originalText;
+          this.disabled = false;
+          
+          // Show error message for pdf generation
+          const errorAlert = document.createElement('div');
+          errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+          errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+          errorAlert.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Failed to generate PDF. Please try again.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          document.body.appendChild(errorAlert);
+          
+          // Auto-remove error message after 3 seconds
+          setTimeout(() => {
+            if (errorAlert.parentNode) {
+              errorAlert.parentNode.removeChild(errorAlert);
+            }
+          }, 3000);
+        });
+      });
+    });

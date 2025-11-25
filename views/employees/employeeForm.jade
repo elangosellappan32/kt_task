@@ -1,0 +1,92 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 #{isEdit ? 'Edit Employee' : 'Add New Employee'}
+      a.btn.btn-secondary(href='/employees')
+        i.fas.fa-arrow-left.me-2
+        | Back to Employees 
+        
+    .card
+      .card-body
+        if error
+          .alert.alert-danger.alert-dismissible.fade.show(role='alert')
+            = error
+            button.btn-close(type='button', data-bs-dismiss='alert')
+        
+        form(method='POST', action=isEdit && employee && employee.id ? `/employees/${employee.id}?_method=PUT` : '/employees')
+          .row.g-3
+            .col-md-6
+              label.form-label
+                i.fas.fa-id-badge.me-1
+                | Employee ID 
+                //text field 
+              input.form-control(type='text', name='employee_id', value=employee && employee.employee_id ? employee.employee_id : '', disabled=!!employee)
+              // explaining auto-generation of employeeid
+              small.form-text.text-muted Auto-generated for new employees
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-toggle-on.me-1
+                | Status
+              // Dropdown for  status
+              select.form-select(name='status')
+                option(value='active', selected=(!employee || employee.status === 'active')) Active
+                option(value='inactive', selected=employee && employee.status === 'inactive') Inactive
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-user.me-1
+                | First Name *
+              input.form-control(type='text', name='first_name', value=employee && employee.first_name ? employee.first_name : '', required)
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-user.me-1
+                | Last Name *
+              input.form-control(type='text', name='last_name', value=employee && employee.last_name ? employee.last_name : '', required)
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-envelope.me-1
+                | Email *
+              // make the field required @ email to progress  
+              input.form-control(type='email', name='email', value=employee && employee.email ? employee.email : '', required)
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-phone.me-1
+                | Phone
+              // Optional input
+              input.form-control(type='tel', name='phone', value=employee && employee.phone ? employee.phone : '')
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-building.me-1
+                | Department *
+              input.form-control(type='text', name='department', value=employee && employee.department ? employee.department : '', required)
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-briefcase.me-1
+                | Position *
+              input.form-control(type='text', name='position', value=employee && employee.position ? employee.position : '', required)
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-map-marker-alt.me-1
+                | Branch *
+              input.form-control(type='text', name='branch', value=employee && employee.branch ? employee.branch : '', required)
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-calendar.me-1
+                | Hire Date *
+              input.form-control(type='date', name='hire_date', value=employee && employee.hire_date ? new Date(employee.hire_date).toISOString().split('T')[0] : '', required)
+            
+            .col-md-12.mt-4
+              button.btn.btn-primary(type='submit')
+                i.fas.fa-save.me-2
+                | #{isEdit ? 'Update Employee' : 'Create Employee'}
+              a.btn.btn-secondary.ms-2(href='/employees') Cancel

@@ -1,0 +1,28 @@
+extends layout
+
+block content
+  .container-fluid.px-4
+    .row.justify-content-center
+      .col-md-6
+        .card.border-warning
+          .card-header.bg-warning.text-dark
+            h3.mb-0
+              i.fas.fa-exclamation-triangle.me-2
+              | Page Not Found (404)
+          .card-body.text-center
+            .mb-4
+              i.fas.fa-search.fa-5x.text-warning.mb-3
+              h4.text-dark Oops! Page not found
+            p.lead The page you're looking for doesn't exist or has been moved.
+            p.text-muted Please check the URL or navigate back to the dashboard.
+            
+            .d-flex.justify-content-center.gap-2.mt-4
+              a.btn.btn-primary(href=referrer || '/')
+                i.fas.fa-arrow-left.me-2
+                | Go Back
+              a.btn.btn-secondary(href='/')
+                i.fas.fa-home.me-2
+                | Home
+              a.btn.btn-info(href='/assets')
+                i.fas.fa-box.me-2
+                | Assets

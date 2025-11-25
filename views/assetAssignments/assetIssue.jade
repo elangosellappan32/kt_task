@@ -1,0 +1,60 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 Issue Asset
+      a.btn.btn-secondary(href='/assets')
+        i.fas.fa-arrow-left.me-2
+        | Back to Assets
+    
+    .card
+      .card-body
+        form(method='POST', action='/asset-assignments/issue')
+          .row.g-3
+            .col-md-6
+              label.form-label
+                i.fas.fa-box.me-1
+                | Select Asset *
+              select.form-select(name='asset_id', required)
+                option(value='') Choose an asset...
+                each asset in availableAssets
+                  option(value=asset.id)= `${asset.name} (${asset.asset_tag}) - ${asset.Category ? asset.Category.name : 'Uncategorized'}`
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-user.me-1
+                | Select Employee *
+              select.form-select(name='employee_id', required)
+                option(value='') Choose an employee...
+                each employee in employees
+                  option(value=employee.id, selected=selectedEmployee == employee.id)= `${employee.first_name} ${employee.last_name} - ${employee.department}`
+            
+            .col-md-6
+              label.form-label
+                i.fas.fa-calendar.me-1
+                | Expected Return Date
+              input.form-control(type='date', name='expected_return_date')
+              small.form-text.text-muted Optional - when asset should be returned
+            
+            .col-md-12
+              label.form-label
+                i.fas.fa-sticky-note.me-1
+                | Notes
+              textarea.form-control(name='notes', rows='3', placeholder='Any additional notes about this assignment...')
+            
+            .col-md-12.mt-4
+              button.btn.btn-primary(type='submit')
+                i.fas.fa-hand-holding-box.me-2
+                | Issue Asset
+              a.btn.btn-secondary.ms-2(href='/assets') Cancel
+    
+    if availableAssets.length === 0
+      .alert.alert-warning.mt-4
+        i.fas.fa-exclamation-triangle.me-2
+        | No available assets to issue. All assets are either assigned or retired.
+    
+    if employees.length === 0
+      .alert.alert-warning.mt-4
+        i.fas.fa-exclamation-triangle.me-2
+        | No active employees found. Please add employees before issuing assets.

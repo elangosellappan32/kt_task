@@ -1,0 +1,410 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 Asset Inventory
+      .btn-group
+        a.btn.btn-primary(href='/assets/add')
+          i.fas.fa-plus.me-2
+          | Add New Asset
+        a.btn.btn-success(href='/asset-assignments/issue')
+          i.fas.fa-hand-holding-box.me-2
+          | Issue Asset
+        a.btn.btn-warning(href='/asset-assignments/return')
+          i.fas.fa-undo.me-2
+          | Return Asset
+        a.btn.btn-danger(href='/asset-assignments/scrap')
+          i.fas.fa-trash.me-2
+          | Scrap Asset
+    
+    // Filters Section - allows users to search and filter assets
+    .card.mb-4
+      .card-header
+        i.fas.fa-filter.me-1
+        | Filters
+      .card-body
+        // Filter form with multiple search options
+        form#assetFilterForm.row.g-3(method='GET', action='/assets')
+          // Search input field
+          .col-md-2
+            label.form-label Search
+            input#searchInput.form-control(type='text', name='search', value=searchQuery, placeholder='Search assets...')
+          // Category filter dropdown
+          .col-md-2
+            label.form-label Category
+            select#categoryFilter.form-select(name='category')
+              option(value='') All Categories
+              each category in categories
+                option(value=category.id, selected=selectedCategory == category.id)= category.name
+          // Status filter dropdown
+          .col-md-2
+            label.form-label Status
+            select#statusFilter.form-select(name='status')
+              option(value='') All Status
+              each status in statuses
+                option(value=status, selected=selectedStatus == status)= status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+          // Branch filter dropdown
+          .col-md-2
+            label.form-label Branch
+            select#branchFilter.form-select(name='branch')
+              option(value='') All Branches
+              each branch in branches
+                option(value=branch, selected=selectedBranch == branch)= branch
+          // Sort by dropdown
+          .col-md-2
+            label.form-label Sort By
+            select#sortBy.form-select(name='sortBy')
+              option(value='name', selected=sortBy === 'name') Name
+              option(value='asset_tag', selected=sortBy === 'asset_tag') Asset Tag
+              option(value='purchase_date', selected=sortBy === 'purchase_date') Purchase Date
+              option(value='purchase_cost', selected=sortBy === 'purchase_cost') Cost
+              option(value='status', selected=sortBy === 'status') Status
+          // Sort order dropdown
+          .col-md-2
+            label.form-label Order
+            select#sortOrder.form-select(name='sortOrder')
+              option(value='ASC', selected=sortOrder === 'ASC') A-Z
+              option(value='DESC', selected=sortOrder === 'DESC') Z-A
+          // Filter action buttons
+          .col-12
+            button.btn.btn-primary.me-2(type='submit') Apply Filters
+            a.btn.btn-outline-secondary(href='/assets') Clear All
+    
+    // Assets Table Section - displays all assets in a searchable table
+    .card.mb-4
+      .card-header.d-flex.justify-content-between.align-items-center
+        div
+          i.fas.fa-table.me-1
+          | Assets List
+        // Export dropdown menu for different file formats
+        .dropdown
+          button.btn.btn-sm.btn-outline-secondary.dropdown-toggle(type='button', id='exportDropdown', data-bs-toggle='dropdown', aria-expanded='false')
+            i.fas.fa-download.me-1
+            | Export
+          ul.dropdown-menu.dropdown-menu-end(aria-labelledby='exportDropdown')
+            li
+              a.dropdown-item(href='#', data-export='csv') CSV
+            li
+              a.dropdown-item(href='#', data-export='excel') Excel
+            li
+              a.dropdown-item(href='#', data-export='pdf') PDF
+      .card-body
+        // Responsive table container
+        .table-responsive
+          // Main assets table with DataTable functionality
+          table#assetsTable.table.table-striped.table-hover.table-bordered
+            // Table header with column names
+            thead.table-light
+              tr
+                th Asset Tag
+                th Name
+                th Category
+                th Serial Number
+                th Purchase Date
+                th Purchase Cost
+                th Status
+                th Assigned To
+                th Actions
+            // Table body with asset data
+            tbody
+              // Loop through each asset and display as a table row
+              each asset in assets
+                tr
+                  // Asset tag column
+                  td= asset.asset_tag || 'N/A'
+                  // Asset name column with link to asset details
+                  td
+                    a(href=`/assets/${asset.id}`)= asset.name
+                  // Category name column
+                  td= asset.Category ? asset.Category.name : 'Uncategorized'
+                  // Serial number column
+                  td= asset.serial_number || 'N/A'
+                  // Purchase date column (formatted)
+                  td= asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : 'N/A'
+                  // Purchase cost column (formatted as currency)
+                  td= asset.purchase_cost ? `₹${parseFloat(asset.purchase_cost).toFixed(2)}` : 'N/A'
+                  // Status column with color-coded badge
+                  td
+                    span.badge.rounded-pill(class={
+                      'bg-success': asset.status === 'available',
+                      'bg-primary': asset.status === 'assigned',
+                      'bg-warning': asset.status === 'under_maintenance',
+                      'bg-secondary': asset.status === 'retired'
+                    })= asset.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+                  // Assigned to column
+                  td
+                    if asset.Assignments && asset.Assignments.length > 0 && asset.Assignments[0].employee
+                      - const employee = asset.Assignments[0].employee;
+                      = `${employee.first_name} ${employee.last_name} (${employee.employee_id})`
+                    else
+                      | Unassigned
+                  // Actions column with view, edit, and delete buttons
+                  td
+                    .btn-group.btn-group-sm(role='group')
+                      // View asset details button
+                      a.btn.btn-outline-primary(href=`/assets/${asset.id}` title='View')
+                        i.fas.fa-eye
+                      // Edit asset button
+                      a.btn.btn-outline-secondary(href=`/assets/edit/${asset.id}` title='Edit')
+                        i.fas.fa-edit
+                      // Delete asset button (opens confirmation modal)
+                      button.btn.btn-outline-danger.delete-asset(type='button' data-id=asset.id title='Delete')
+                        i.fas.fa-trash
+    
+    // Pagination Section - shows page navigation when there are many assets
+    if totalPages > 1
+      .d-flex.justify-content-between.align-items-center
+        // Shows current page information
+        span.text-muted Showing #{(currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, totalCount)} of #{totalCount} assets
+        // Pagination navigation
+        nav
+          ul.pagination.mb-0
+            // Previous page button (disabled if on first page)
+            li.page-item(class=currentPage === 1 ? 'disabled' : '')
+              a.page-link(href=`?page=${currentPage - 1}&search=${searchQuery}&category=${selectedCategory}&status=${selectedStatus}&branch=${selectedBranch}&sortBy=${sortBy}&sortOrder=${sortOrder}`) Previous
+            // Page number buttons (loop through all pages)
+            - for(var i = 1; i <= totalPages; i++)
+              li.page-item(class=i === currentPage ? 'active' : '')
+                a.page-link(href=`?page=${i}&search=${searchQuery}&category=${selectedCategory}&status=${selectedStatus}&branch=${selectedBranch}&sortBy=${sortBy}&sortOrder=${sortOrder}`)= i
+            // Next page button (disabled if on last page)
+            li.page-item(class=currentPage === totalPages ? 'disabled' : '')
+              a.page-link(href=`?page=${currentPage + 1}&search=${searchQuery}&category=${selectedCategory}&status=${selectedStatus}&branch=${selectedBranch}&sortBy=${sortBy}&sortOrder=${sortOrder}`) Next
+    
+    // Delete Confirmation Modal - popup window for confirming asset deletion
+    #deleteAssetModal.modal.fade(tabindex='-1')
+      .modal-dialog
+        .modal-content
+          // Modal header with danger styling
+          .modal-header.bg-danger.text-white
+            h5.modal-title Confirm Deletion
+            // Close button for modal
+            button.btn-close.btn-close-white(type='button', data-bs-dismiss='modal')
+          // Modal body with confirmation message
+          .modal-body
+            p Are you sure you want to delete this asset?
+            p.text-danger This action cannot be undone.
+          // Modal footer with action buttons
+          .modal-footer
+            // Cancel button to close modal without deleting
+            button.btn.btn-secondary(type='button', data-bs-dismiss='modal') Cancel
+            // Confirm delete button (actually performs deletion)
+            button#confirmDelete.btn.btn-danger(type='button') Delete
+    
+    // JavaScript Section - contains all interactive functionality
+    block scripts
+      script.
+        // Wait for page to fully load before running JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+          // Initialize DataTable from the datable.net - makes the table searchable and sortable
+          // Check if DataTable is already initialized to prevent reinitialization
+          if (!$.fn.DataTable.isDataTable('#assetsTable')) {
+            const table = $('#assetsTable').DataTable({
+              pageLength: 25  // Show 25 rows per page
+            });
+          }
+          
+          // Export functionality for assets table
+          document.querySelectorAll('[data-export]').forEach(item => {
+            item.addEventListener('click', function(e) {
+              e.preventDefault();
+              const exportType = this.dataset.export;
+              const table = $('#assetsTable').DataTable();
+              
+              if (exportType === 'pdf') {
+                // Custom PDF export using jsPDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('landscape', 'mm', 'a4');
+                
+                // Add title
+                pdf.setFontSize(16);
+                pdf.text('Assets List', 148, 15, { align: 'center' });
+                
+                // Add date
+                pdf.setFontSize(10);
+                pdf.text(`Generated: ${new Date().toLocaleDateString()}`, 148, 22, { align: 'center' });
+                
+                // Prepare table data by extracting from DOM instead of DataTable
+                const headers = ['Asset Tag', 'Name', 'Category', 'Serial Number', 'Purchase Date', 'Purchase Cost', 'Status', 'Assigned To'];
+                const data = [];
+                
+                // Get data directly from the table DOM
+                const table = document.getElementById('assetsTable');
+                const rows = table.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    if (cells.length >= 8) {
+                        // Extract text content from each cell
+                        const rowData = [];
+                        cells.forEach((cell, index) => {
+                            if (index === 1) { // Name column - get text from link
+                                const link = cell.querySelector('a');
+                                rowData.push(link ? link.textContent.trim() : cell.textContent.trim());
+                            } else if (index === 6) { // Status column - get text from badge
+                                const badge = cell.querySelector('.badge');
+                                rowData.push(badge ? badge.textContent.trim() : cell.textContent.trim());
+                            } else {
+                                rowData.push(cell.textContent.trim());
+                            }
+                        });
+                        data.push(rowData);
+                    }
+                });
+                
+                // Generate table using jsPDF autoTable plugin
+                if (window.jspdf && pdf.autoTable) {
+                  pdf.autoTable({
+                    head: [headers],
+                    body: data,
+                    startY: 30,
+                    styles: { 
+                      fontSize: 8,
+                      cellPadding: 2
+                    },
+                    headStyles: { 
+                      fillColor: [66, 139, 202],
+                      textColor: 255,
+                      fontStyle: 'bold'
+                    },
+                    bodyStyles: {
+                      textColor: 0
+                    },
+                    margin: { left: 10, right: 10 },
+                    pageBreak: 'auto',
+                    columnStyles: {
+                      0: { cellWidth: 20 }, // Asset Tag
+                      1: { cellWidth: 30 }, // Name
+                      2: { cellWidth: 25 }, // Category
+                      3: { cellWidth: 25 }, // Serial Number
+                      4: { cellWidth: 20 }, // Purchase Date
+                      5: { cellWidth: 20 }, // Purchase Cost
+                      6: { cellWidth: 20 }, // Status
+                      7: { cellWidth: 35 }  // Assigned To
+                    }
+                  });
+                } else {
+                  // Fallback: manual table generation
+                  let yPosition = 30;
+                  const cellWidths = [20, 30, 25, 25, 20, 20, 20, 35];
+                  const cellHeight = 8;
+                  
+                  // Draw headers
+                  headers.forEach((header, index) => {
+                    pdf.setFontSize(8);
+                    pdf.text(header, 10 + cellWidths.slice(0, index).reduce((a, b) => a + b, 0), yPosition);
+                  });
+                  yPosition += cellHeight;
+                  
+                  // Draw data rows
+                  data.forEach(row => {
+                    if (yPosition > 180) { // Add new page if needed
+                      pdf.addPage();
+                      yPosition = 20;
+                    }
+                    row.forEach((cell, index) => {
+                      pdf.setFontSize(7);
+                      const text = String(cell).substring(0, 25); // Limit text length
+                      pdf.text(text, 10 + cellWidths.slice(0, index).reduce((a, b) => a + b, 0), yPosition);
+                    });
+                    yPosition += cellHeight;
+                  });
+                }
+                
+                // Save the PDF
+                pdf.save('assets_export.pdf');
+                
+              } else if (exportType === 'csv') {
+                // CSV export
+                window.location.href = table.button().add(0, {
+                  extend: 'csv',
+                  filename: 'assets_export',
+                  title: 'Assets List'
+                }).trigger();
+                
+              } else if (exportType === 'excel') {
+                // Excel export
+                window.location.href = table.button().add(0, {
+                  extend: 'excel',
+                  filename: 'assets_export',
+                  title: 'Assets List'
+                }).trigger();
+              }
+            });
+          });
+
+          // Delete asset function - handles delete button clicks using Bootstrap modal
+          document.querySelectorAll('.delete-asset').forEach(button => {
+            // Add click event listener to each delete button
+            button.addEventListener('click', function() {
+              // Get the asset ID from the button's data attribute
+              const assetId = this.dataset.id;  
+              console.log('Deleting asset:', assetId);  // Debug log
+              
+              // Create and show the Bootstrap modal
+              const modal = new bootstrap.Modal(document.getElementById('deleteAssetModal'));
+              
+              // Set up the confirm delete button functionality
+              document.getElementById('confirmDelete').onclick = function() {
+                // Show loading state
+                const deleteBtn = document.querySelector(`[data-id="${assetId}"]`);
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+                
+                // Send DELETE request to server to remove asset
+                fetch(`/assets/${assetId}`, {  
+                  method: 'DELETE',  // HTTP method for deletion
+                  headers: {
+                    'Content-Type': 'application/json'  // Tell server we're sending JSON
+                  }
+                })
+                .then(response => {
+                  console.log('Response status:', response.status);  // Debug log
+                  return response.json();  // Parse the JSON response from server
+                })
+                .then(data => {
+                  console.log('Response data:', data);  // Debug log
+                  // Check if deletion was successful
+                  if (data.success) {
+                    // Close modal
+                    modal.hide();
+                    // Remove the row from table with animation
+                    const row = deleteBtn.closest('tr');
+                    row.style.transition = 'opacity 0.3s';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                      row.remove();
+                      // Show success message
+                      const alert = document.createElement('div');
+                      alert.className = 'alert alert-success alert-dismissible fade show';
+                      alert.setAttribute('role', 'alert');
+                      alert.innerHTML = 'Asset deleted successfully<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                      document.querySelector('.container-fluid').prepend(alert);
+                      // Auto-hide success message
+                      setTimeout(() => {
+                        if (alert.parentNode) {
+                          alert.remove();
+                        }
+                      }, 3000);
+                    }, 300);
+                  } else {
+                    // Show error message from server or default error
+                    alert('Error deleting asset: ' + (data.message || 'Unknown error'));
+                    // Restore button state
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                  }
+                })
+                .catch(error => {
+                  console.error('Error:', error);  // Log error for debugging
+                  alert('Error deleting asset. Please try again.');  // Show user-friendly error
+                  // Restore button state
+                  deleteBtn.disabled = false;
+                  deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                });
+              };
+              
+              modal.show();  // Display the confirmation modal
+            });
+          });
+        });

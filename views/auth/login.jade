@@ -1,0 +1,36 @@
+extends ../layout
+
+block content
+  // login form as fixed as centered on the page 
+  .row.justify-content-center.align-items-center.min-vh-100
+    .col-md-6.col-lg-4
+      .card.shadow
+        .card-header.bg-primary.text-white.text-center
+          h4.mb-0
+            i.fas.fa-sign-in-alt.me-2
+            | office item tracker Login
+        .card-body.p-4
+          
+          // Login form with POST method 
+          form(method='POST' action='/login')
+            .mb-3
+              label.form-label(for='username')
+                i.fas.fa-user.me-1
+                | Username
+              input#username.form-control.form-control-lg(type='text' name='username' required placeholder='Enter your username' autocomplete='username')
+            .mb-3
+              label.form-label(for='password')
+                i.fas.fa-lock.me-1
+                | Password
+              input#password.form-control.form-control-lg(type='password' name='password' required placeholder='Enter your password' autocomplete='current-password')
+            // checkbox for remember me 
+            .mb-3.form-check
+              input.form-check-input(type='checkbox' id='remember')
+              label.form-check-label(for='remember')
+                | Remember me
+            // Submit button 
+            .d-grid
+              button.btn.btn-primary.btn-lg(type='submit')
+                i.fas.fa-sign-in-alt.me-2
+                | Login
+          

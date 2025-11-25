@@ -1,0 +1,142 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 Asset Details
+      .btn-group
+        a.btn.btn-outline-primary(href=`/assets/edit/${asset.id}`)
+          i.fas.fa-edit.me-2
+          | Edit Asset
+        a.btn.btn-outline-secondary(href='/assets')
+          i.fas.fa-arrow-left.me-2
+          | Back to Assets
+    
+    // Main content row with asset details and financial information
+    .row
+      // Asset Information Section (takes up 8 out of 12 columns)
+      .col-md-8
+        .card
+          .card-header
+            h5.mb-0 Asset Information
+          .card-body
+            // Asset Tag row (unique identifier)
+            .row.mb-3
+              .col-sm-4.fw-bold Asset Tag:
+              .col-sm-8= asset.asset_tag || 'N/A'
+            // Serial Number row (manufacturer serial)
+            .row.mb-3
+              .col-sm-4.fw-bold Serial Number:
+              .col-sm-8= asset.serial_number || 'N/A'
+            // Asset Name row
+            .row.mb-3
+              .col-sm-4.fw-bold Name:
+              .col-sm-8= asset.name
+            // Model row (shows N/A if empty)
+            .row.mb-3
+              .col-sm-4.fw-bold Model:
+              .col-sm-8= asset.model || 'N/A'
+            // Manufacturer row (shows N/A if empty)
+            .row.mb-3
+              .col-sm-4.fw-bold Manufacturer:
+              .col-sm-8= asset.manufacturer || 'N/A'
+            // Category row (shows category name or 'Uncategorized')
+            .row.mb-3
+              .col-sm-4.fw-bold Category:
+              .col-sm-8= asset.Category ? asset.Category.name : 'Uncategorized'
+            // Status row with color-coded badge
+            .row.mb-3
+              .col-sm-4.fw-bold Status:
+              .col-sm-8
+                // Status badge with color based on asset status
+                span.badge.rounded-pill(class={
+                  'bg-success': asset.status === 'available',      // Green for available
+                  'bg-primary': asset.status === 'assigned',         // Blue for assigned
+                  'bg-warning': asset.status === 'under_maintenance', // Yellow for maintenance
+                  'bg-secondary': asset.status === 'retired'         // Gray for retired
+                })= asset.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+            // Branch row (shows N/A if empty)
+            .row.mb-3
+              .col-sm-4.fw-bold Branch:
+              .col-sm-8= asset.branch || 'N/A'
+            // Location row (shows N/A if empty)
+            .row.mb-3
+              .col-sm-4.fw-bold Location:
+              .col-sm-8= asset.location || 'N/A'
+            // Notes row (only shows if notes exist)
+            if asset.notes
+              .row.mb-3
+                .col-sm-4.fw-bold Notes:
+                .col-sm-8= asset.notes
+      
+      // Side column with financial and status information (takes up 4 out of 12 columns)
+      .col-md-4
+        // Financial Information Card
+        .card.mb-3
+          .card-header
+            h5.mb-0 Financial Information
+          .card-body
+            // Purchase Date row (formatted as readable date)
+            .row.mb-3
+              .col-sm-5.fw-bold Purchase Date:
+              .col-sm-7= asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : 'N/A'
+            // Purchase Cost row (formatted as currency)
+            .row.mb-3
+              .col-sm-5.fw-bold Purchase Cost:
+              .col-sm-7= asset.purchase_cost ? `₹${parseFloat(asset.purchase_cost).toFixed(2)}` : 'N/A'
+            // Current Value row (formatted as currency)
+            .row.mb-3
+              .col-sm-5.fw-bold Current Value:
+              .col-sm-7= asset.current_value ? `₹${parseFloat(asset.current_value).toFixed(2)}` : 'N/A'
+            // Warranty row (shows months or N/A)
+            .row.mb-3
+              .col-sm-5.fw-bold Warranty:
+              .col-sm-7= asset.warranty_months ? `${asset.warranty_months} months` : 'N/A'
+        
+        // Status Card
+        .card
+          .card-header
+            h5.mb-0 Status
+          .card-body
+            .form-check
+              // Checkbox showing if asset is active (disabled for display only)
+              input.form-check-input(type='checkbox', checked=asset.is_active, disabled)
+              label.form-check-label Active
+    
+    // Assignment History Section - shows all employees who have used this asset
+    if asset.assignments && asset.assignments.length > 0
+      .card.mt-4
+        .card-header
+          h5.mb-0 Assignment History
+        .card-body
+          // Responsive table container
+          .table-responsive
+            // Assignment history table
+            table.table.table-striped
+              // Table header
+              thead
+                tr
+                  th Employee
+                  th Assigned Date
+                  th Return Date
+                  th Status
+              // Table body with assignment data
+              tbody
+                // Loop through each assignment
+                each assignment in asset.assignments
+                  tr
+                    // Employee name column (shows full name or N/A)
+                    td= assignment.employee ? `${assignment.employee.first_name} ${assignment.employee.last_name}` : 'N/A'
+                    // Assigned date column (formatted as readable date)
+                    td= new Date(assignment.assigned_date).toLocaleDateString()
+                    // Return date column (shows date or '—' if not returned)
+                    td= assignment.return_date ? new Date(assignment.return_date).toLocaleDateString() : '—'
+                    // Status column with color-coded badge
+                    td
+                      // Assignment status badge with color based on status
+                      span.badge.rounded-pill(class={
+                        'bg-primary': assignment.status === 'assigned',   // Blue for currently assigned
+                        'bg-success': assignment.status === 'returned',   // Green for returned
+                        'bg-danger': assignment.status === 'lost',        // Red for lost
+                        'bg-warning': assignment.status === 'damaged'     // Yellow for damaged
+                      })= assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)

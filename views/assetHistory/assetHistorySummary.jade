@@ -1,0 +1,46 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 Asset History - Select Asset
+      a.btn.btn-outline-secondary(href='/')
+        i.fas.fa-arrow-left.me-2
+        | Back to Dashboard
+    
+    // Assets List
+    .card
+      .card-header
+        h5.mb-0 Available Assets
+      .card-body
+        if assets && assets.length > 0
+          .table-responsive
+            table.table.table-striped
+              thead
+                tr
+                  th Asset Tag
+                  th Name
+                  th Category
+                  th Status
+                  th Actions
+              tbody
+                each asset in assets
+                  tr
+                    td= asset.asset_tag || 'N/A'
+                    td= asset.name
+                    td= asset.Category ? asset.Category.name : 'Uncategorized'
+                    td
+                      span.badge.rounded-pill(class={
+                        'bg-primary': asset.status === 'assigned',
+                        'bg-success': asset.status === 'available',
+                        'bg-warning': asset.status === 'under_maintenance',
+                        'bg-secondary': asset.status === 'retired'
+                      })= asset.status.charAt(0).toUpperCase() + asset.status.slice(1).replace('_', ' ')
+                    td
+                      a.btn.btn-sm.btn-outline-primary(href=`/asset-history/${asset.id}`)
+                        i.fas.fa-history.me-1
+                        | View History
+        else
+          .alert.alert-info
+            i.fas fa-info-circle.me-2
+            | No assets found in the system.

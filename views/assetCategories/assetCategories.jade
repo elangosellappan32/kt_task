@@ -1,0 +1,315 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 Asset Categories
+      a.btn.btn-primary(href='/asset-categories/add')
+        i.fas.fa-plus.me-2
+        | Add Category
+    
+    // Asset Categories Table Section - displays all categories in a searchable table
+    .card
+      .card-body
+        // Responsive table container
+        .table-responsive
+          // Main categories table with DataTable functionality
+          table#categoriesTable.table.table-striped.table-hover
+            // Table header with column names
+            thead
+              tr
+                th Category Name
+                th Description
+                th Lifespan (months)
+                th Depreciation Rate
+                th Status
+                th Actions
+            // Table body with category data
+            tbody
+              // Loop through each category and display as a table row
+              each category in categories
+                tr
+                  // Category name column (bold)
+                  td
+                    strong= category.name
+                  // Description column (shows '—' if empty)
+                  td= category.description || '—'
+                  // Lifespan column (shows '—' if empty)
+                  td= category.expected_lifespan_months || '—'
+                  // Depreciation rate column (shows percentage or '—' if empty)
+                  td= category.depreciation_rate ? `${category.depreciation_rate}%` : '—'
+                  // Status column with color-coded badge
+                  td
+                    span.badge.rounded-pill(class=category.is_active ? 'bg-success' : 'bg-secondary')
+                      = category.is_active ? 'Active' : 'Inactive'
+                  // Actions column with edit and delete buttons
+                  td
+                    .btn-group.btn-group-sm
+                      // Edit category button
+                      a.btn.btn-outline-primary(href=`/asset-categories/edit/${category.id}` title='Edit')
+                        i.fas.fa-edit
+                      // Delete category button (opens confirmation modal)
+                      button.btn.btn-outline-danger.delete-category(type='button', data-id=category.id, title='Delete')
+                        i.fas.fa-trash
+    
+    // Delete Confirmation Modal - popup window for confirming category deletion
+    #deleteCategoryModal.modal.fade(tabindex='-1')
+      .modal-dialog
+        .modal-content
+          // Modal header with danger styling
+          .modal-header.bg-danger.text-white
+            h5.modal-title Confirm Deletion
+            // Close button for modal
+            button.btn-close.btn-close-white(type='button', data-bs-dismiss='modal')
+          // Modal body with confirmation message
+          .modal-body
+            p Are you sure you want to delete this asset category?
+            p.text-danger This action cannot be undone.
+          // Modal footer with action buttons
+          .modal-footer
+            // Cancel button to close modal without deleting
+            button.btn.btn-secondary(type='button', data-bs-dismiss='modal') Cancel
+            // Confirm delete button (actually performs deletion)
+            button#confirmDelete.btn.btn-danger(type='button') Delete
+
+// JavaScript Section - contains all interactive functionality
+block scripts
+  script.
+    // Wait for page to fully load before running JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize DataTable for categories table - makes the table searchable and sortable
+      // Check if DataTable is already initialized to prevent reinitialization
+      if (!$.fn.DataTable.isDataTable('#categoriesTable')) {
+        $('#categoriesTable').DataTable({
+          pageLength: 25  // Show 25 rows per page
+        });
+      }
+      
+      // Delete category function - handles delete button clicks
+      document.querySelectorAll('.delete-category').forEach(button => {
+        // Add click event listener to each delete button
+        button.addEventListener('click', function() {
+          // Get the category ID from the button's data attribute
+          const categoryId = this.dataset.id;  
+          console.log('Deleting category:', categoryId);  // Debug log
+          
+          // Show loading state on button
+          const originalContent = this.innerHTML;
+          this.disabled = true;
+          this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          
+          // Check if category has assets before showing modal
+          fetch(`/asset-categories/${categoryId}`)
+            .then(response => {
+              console.log('Response status:', response.status);
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then(category => {
+              console.log('Category data:', category);
+              
+              // Restore button state
+              this.disabled = false;
+              this.innerHTML = originalContent;
+              
+              if (category.assets && category.assets.length > 0) {
+                // Show warning modal with asset count
+                showAssetWarningModal(category);
+              } else {
+                // No assets, proceed with normal delete confirmation
+                showDeleteConfirmationModal(categoryId, category.name);
+              }
+            })
+            .catch(error => {
+              console.error('Error checking category assets:', error);
+              // Restore button state
+              this.disabled = false;
+              this.innerHTML = originalContent;
+              // Show error message
+              showErrorAlert('Error checking category assets. Please try again.');
+            });
+        });
+      });
+      
+      // Function to show asset warning modal
+      function showAssetWarningModal(category) {
+        const assetCount = category.assets.length;
+        const assetList = category.assets.map(asset => 
+          `<li>${asset.name} (${asset.asset_tag})</li>`
+        ).join('');
+        
+        const modalHtml = `
+          <div class="modal fade" id="warningModal" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                  <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Category Has Assets
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="alert alert-warning">
+                    <strong>This category contains ${assetCount} asset(s).</strong>
+                  </div>
+                  <p>You cannot delete a category that still has assets assigned to it.</p>
+                  <p>To proceed with deletion, you must first:</p>
+                  <ol>
+                    <li>Reassign these assets to another category, OR</li>
+                    <li>Delete these assets from the system</li>
+                  </ol>
+                  <div class="mt-3">
+                    <strong>Assets in this category:</strong>
+                    <ul class="list-group list-group-flush mt-2">
+                      ${assetList}
+                    </ul>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-check me-2"></i>I Understand
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Remove any existing warning modal
+        const existingWarning = document.getElementById('warningModal');
+        if (existingWarning) existingWarning.remove();
+        
+        // Add warning modal to page and show it
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+        warningModal.show();
+        
+        // Clean up modal after it's hidden
+        document.getElementById('warningModal').addEventListener('hidden.bs.modal', function() {
+          this.remove();
+        });
+      }
+      
+      // Function to show delete confirmation modal
+      function showDeleteConfirmationModal(categoryId, categoryName) {
+        // Update modal content with category name
+        document.querySelector('#deleteCategoryModal .modal-body p').innerHTML = 
+          `Are you sure you want to delete the asset category <strong>"${categoryName}"</strong>?<br>
+           <span class="text-danger">This action cannot be undone.</span>`;
+        
+        const modal = new bootstrap.Modal(document.getElementById('deleteCategoryModal'));
+        
+        // Set up the confirm delete button functionality
+        document.getElementById('confirmDelete').onclick = function() {
+          performCategoryDeletion(categoryId, modal);
+        };
+        
+        modal.show();
+      }
+      
+      // Function to perform the actual deletion
+      function performCategoryDeletion(categoryId, modal) {
+        // Show loading state
+        const deleteBtn = document.querySelector(`[data-id="${categoryId}"]`);
+        const originalContent = deleteBtn.innerHTML;
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        
+        // Disable confirm button
+        const confirmBtn = document.getElementById('confirmDelete');
+        const originalConfirmContent = confirmBtn.innerHTML;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        
+        // Send DELETE request to server to remove category
+        console.log('Sending DELETE request to:', `/asset-categories/${categoryId}`);
+        fetch(`/asset-categories/${categoryId}`, {  
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => {
+          console.log('Delete response status:', response.status);
+          return response.json();
+        })
+        .then(data => {
+          console.log('Delete response data:', data);
+          
+          // Restore button states
+          deleteBtn.disabled = false;
+          deleteBtn.innerHTML = originalContent;
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalConfirmContent;
+          
+          // Check if deletion was successful
+          if (data.success) {
+            // Close modal
+            modal.hide();
+            // Remove the row from table with animation
+            const row = deleteBtn.closest('tr');
+            row.style.transition = 'opacity 0.3s';
+            row.style.opacity = '0';
+            setTimeout(() => {
+              row.remove();
+              // Show success message
+              showSuccessAlert('Category deleted successfully');
+              // Refresh DataTable to update the table
+              $('#categoriesTable').DataTable().draw();
+            }, 300);
+          } else {
+            // Show error message
+            showErrorAlert(data.message || 'Error deleting category');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          // Restore button states
+          deleteBtn.disabled = false;
+          deleteBtn.innerHTML = originalContent;
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = originalConfirmContent;
+          // Show error message
+          showErrorAlert('Error deleting category. Please try again.');
+        });
+      }
+      
+      // Function to show success alert
+      function showSuccessAlert(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success alert-dismissible fade show';
+        alert.setAttribute('role', 'alert');
+        alert.innerHTML = `
+          <i class="fas fa-check-circle me-2"></i>${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container-fluid').prepend(alert);
+        // Auto-hide success message
+        setTimeout(() => {
+          if (alert.parentNode) {
+            alert.remove();
+          }
+        }, 5000);
+      }
+      
+      // Function to show error alert
+      function showErrorAlert(message) {
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show';
+        alert.setAttribute('role', 'alert');
+        alert.innerHTML = `
+          <i class="fas fa-exclamation-triangle me-2"></i>${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container-fluid').prepend(alert);
+        // Auto-hide error message after longer time
+        setTimeout(() => {
+          if (alert.parentNode) {
+            alert.remove();
+          }
+        }, 8000);
+      }
+    });

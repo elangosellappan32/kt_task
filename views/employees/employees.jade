@@ -1,0 +1,416 @@
+extends ../layout
+
+block content
+  .container-fluid.px-4
+    .d-flex.justify-content-between.align-items-center.mb-4
+      h1.mb-0 Employee page
+      a.btn.btn-primary(href='/employees/add')
+        i.fas.fa-plus.me-2
+        | Add Employee
+    
+    // Filter Section for employee filtering and search  
+    .card.mb-4
+      .card-header
+        i.fas.fa-filter.me-1
+        | Filters
+      .card-body
+        // get employee details with get method for filtered data 
+        form#employeeFilterForm.row.g-3(method='GET', action='/employees')
+          .col-md-2
+            label.form-label Search
+            input#searchInput.form-control(type='text', name='search', value=searchQuery, placeholder='Search employees...')
+          .col-md-2
+            label.form-label Department
+            select#departmentFilter.form-select(name='department')
+              option(value='') All Departments
+              each dept in departments
+                option(value=dept, selected=selectedDepartment === dept)= dept
+          .col-md-2
+            label.form-label Status
+            select#statusFilter.form-select(name='status')
+              option(value='') All Status
+              each status in statuses
+                option(value=status, selected=selectedStatus === status)= status.charAt(0).toUpperCase() + status.slice(1)
+          .col-md-2
+            label.form-label Branch
+            select#branchFilter.form-select(name='branch')
+              option(value='') All Branches
+              each branch in branches
+                option(value=branch, selected=selectedBranch === branch)= branch
+          .col-md-2
+            label.form-label Sort By
+            select#sortBy.form-select(name='sortBy')
+              option(value='last_name', selected=sortBy === 'last_name') Last Name
+              option(value='first_name', selected=sortBy === 'first_name') First Name
+              option(value='employee_id', selected=sortBy === 'employee_id') Employee ID
+              option(value='department', selected=sortBy === 'department') Department
+              option(value='position', selected=sortBy === 'position') Position
+          // Sort order by ascending and descending 
+          .col-md-2
+            label.form-label Order
+            select#sortOrder.form-select(name='sortOrder')
+              option(value='ASC', selected=sortOrder === 'ASC') A-Z
+              option(value='DESC', selected=sortOrder === 'DESC') Z-A
+          .col-12
+            button.btn.btn-primary.me-2(type='submit') Apply Filters
+            a.btn.btn-outline-secondary(href='/employees') Clear All
+    
+    // Employees Table display
+    .card.mb-4
+      .card-header.d-flex.justify-content-between.align-items-center
+        div
+          i.fas.fa-table.me-1
+          | Employees List
+        // Export button for downloading pdf csv excel of employee details 
+        .dropdown
+          button.btn.btn-sm.btn-outline-secondary.dropdown-toggle(type='button', id='exportDropdown', data-bs-toggle='dropdown', aria-expanded='false')
+            i.fas.fa-download.me-1
+            | Export
+          ul.dropdown-menu.dropdown-menu-end(aria-labelledby='exportDropdown')
+            li
+              a.dropdown-item(href='#', data-export='csv') CSV
+            li
+              a.dropdown-item(href='#', data-export='excel') Excel
+            li
+              a.dropdown-item(href='#', data-export='pdf') PDF
+      .card-body
+        .table-responsive
+          //employees table with DataTable functionality
+          table#employeesTable.table.table-striped.table-hover.table-bordered
+            thead.table-light
+              tr
+                th Name
+                th Employee ID
+                th Department
+                th Position
+                th Branch
+                th Status
+                th Actions
+            tbody
+              each employee in employees
+                tr
+                  // Employee name with navigation of employee details 
+                  td(data-search=employee.first_name + ' ' + employee.last_name)
+                    a(href='/employees/' + employee.id)= employee.first_name + ' ' + employee.last_name
+                  td= employee.employee_id
+                  td= employee.department
+                  td= employee.position
+                  td= employee.branch
+                  td
+                    span.badge.rounded-pill(class={
+                      'bg-success': employee.status === 'active',
+                      'bg-secondary': employee.status === 'inactive'
+                    })= employee.status.charAt(0).toUpperCase() + employee.status.slice(1)
+                  td
+                    .btn-group.btn-group-sm(role='group')
+                      // view employee details button
+                      a.btn.btn-outline-primary(href='/employees/#{employee.id}' title='View')
+                        i.fas.fa-eye
+                      // Edit button
+                      a.btn.btn-outline-secondary(href='/employees/#{employee.id}/edit' title='Edit')
+                        i.fas.fa-edit
+                      // Delete employee button
+                      button.btn.btn-outline-danger.delete-employee(type='button' data-id=employee.id title='Delete')
+                        i.fas.fa-trash
+
+
+    // Delete Confirmation dialog
+    #deleteEmployeeModal.modal.fade(tabindex='-1')
+      .modal-dialog
+        .modal-content
+          .modal-header.bg-danger.text-white
+            h5.modal-title Confirm Deletion
+            button.btn-close.btn-close-white(type='button', data-bs-dismiss='modal')
+          .modal-body
+            p Are you sure you want to delete this employee?
+            p.text-danger This action cannot be undone.
+          .modal-footer
+            button.btn.btn-secondary(type='button', data-bs-dismiss='modal') Cancel
+            button#confirmDeleteEmployee.btn.btn-danger(type='button') Delete
+
+// interactive function for search,export and delete
+block scripts
+  script.
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!$.fn.DataTable.isDataTable('#employeesTable')) {
+        $('#employeesTable').DataTable({
+          pageLength: 25,
+          language: {
+            search: "Search employees:",
+            searchPlaceholder: "Search by name, ID, department, position..."
+          },
+          search: {
+            caseInsensitive: true,
+            regex: true,
+            smart: true
+          }
+        });
+      }
+      document.querySelectorAll('[data-export]').forEach(item => {
+        item.addEventListener('click', function(e) {
+          e.preventDefault();
+          const exportType = this.dataset.export;
+          const table = $('#employeesTable').DataTable();
+          
+          if (exportType === 'pdf') {
+            // Custom PDF export using jsPDF
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('landscape', 'mm', 'a4');
+            
+            // Add title
+            pdf.setFontSize(16);
+            pdf.text('Employees List', 148, 15, { align: 'center' });
+            
+            // Add date
+            pdf.setFontSize(10);
+            pdf.text(`Generated: ${new Date().toLocaleDateString()}`, 148, 22, { align: 'center' });
+            
+            // Prepare table data by extracting from DOM instead of DataTable
+            const headers = ['Name', 'Employee ID', 'Department', 'Position', 'Branch', 'Status'];
+            const data = [];
+            
+            // Get data directly from the table DOM
+            const table = document.getElementById('employeesTable');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 6) {
+                    // Extract text content from each cell
+                    const rowData = [];
+                    cells.forEach((cell, index) => {
+                        if (index === 0) { // Name column - get text from link
+                            const link = cell.querySelector('a');
+                            rowData.push(link ? link.textContent.trim() : cell.textContent.trim());
+                        } else if (index === 5) { // Status column - get text from badge
+                            const badge = cell.querySelector('.badge');
+                            rowData.push(badge ? badge.textContent.trim() : cell.textContent.trim());
+                        } else {
+                            rowData.push(cell.textContent.trim());
+                        }
+                    });
+                    data.push(rowData);
+                }
+            });
+            
+            // Generate table using jsPDF autoTable plugin
+            if (window.jspdf && pdf.autoTable) {
+              pdf.autoTable({
+                head: [headers],
+                body: data,
+                startY: 30,
+                styles: { 
+                  fontSize: 10,
+                  cellPadding: 2
+                },
+                headStyles: { 
+                  fillColor: [66, 139, 202],
+                  textColor: 255,
+                  fontStyle: 'bold'
+                },
+                bodyStyles: {
+                  textColor: 0
+                },
+                margin: { left: 10, right: 10 },
+                pageBreak: 'auto',
+                columnStyles: {
+                  0: { cellWidth: 40 }, // Name
+                  1: { cellWidth: 25 }, // Employee ID
+                  2: { cellWidth: 30 }, // Department
+                  3: { cellWidth: 30 }, // Position
+                  4: { cellWidth: 25 }, // Branch
+                  5: { cellWidth: 20 }  // Status
+                }
+              });
+            } else {
+              // Fallback: manual table generation
+              let yPosition = 30;
+              const cellWidths = [40, 25, 30, 30, 25, 20];
+              const cellHeight = 8;
+              
+              // Draw headers
+              headers.forEach((header, index) => {
+                pdf.setFontSize(9);
+                pdf.text(header, 10 + cellWidths.slice(0, index).reduce((a, b) => a + b, 0), yPosition);
+              });
+              yPosition += cellHeight;
+              
+              // Draw data rows
+              data.forEach(row => {
+                if (yPosition > 180) { // Add new page if needed
+                  pdf.addPage();
+                  yPosition = 20;
+                }
+                row.forEach((cell, index) => {
+                  pdf.setFontSize(8);
+                  const text = String(cell).substring(0, 30); // Limit text length
+                  pdf.text(text, 10 + cellWidths.slice(0, index).reduce((a, b) => a + b, 0), yPosition);
+                });
+                yPosition += cellHeight;
+              });
+            }
+            
+            // Save the PDF
+            pdf.save('employees_export.pdf');
+            
+          } else if (exportType === 'csv') {
+            // CSV export
+            window.location.href = table.button().add(0, {
+              extend: 'csv',
+              filename: 'employees_export',
+              title: 'Employees List'
+            }).trigger();
+            
+          } else if (exportType === 'excel') {
+            // Excel export
+            window.location.href = table.button().add(0, {
+              extend: 'excel',
+              filename: 'employees_export',
+              title: 'Employees List'
+            }).trigger();
+          }
+        });
+      });
+      
+      // Delete employee function
+      document.querySelectorAll('.delete-employee').forEach(button => {
+        button.addEventListener('click', function() {
+          const employeeId = this.dataset.id;
+          
+          //checking bootstrap if started 
+          if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap is not loaded!');
+            alert('Error: Bootstrap library not loaded');
+            return;
+          }
+          
+          const modalElement = document.getElementById('deleteEmployeeModal');
+          console.log('Modal element found:', modalElement);
+          
+          if (!modalElement) {
+            console.error('Modal element not found!');
+            alert('Error: Delete confirmation modal not found');
+            return;
+          }
+          
+          //  create and display the bootstrap in frontend 
+          let modal;
+          try {
+            modal = new bootstrap.Modal(modalElement);
+          } catch (error) {
+            console.error('Error creating modal:', error);
+            alert('Error creating modal');
+            return;
+          }
+          
+          // Set up the confirm delete 
+          const confirmBtn = document.getElementById('confirmDeleteEmployee');
+          if (confirmBtn) {
+            confirmBtn.onclick = function() {
+              
+              // Show loading reload 
+              const deleteBtn = document.querySelector(`[data-id="${employeeId}"]`);
+              if (deleteBtn) {
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+              }
+              
+              fetch(`/employees/${employeeId}`, {  
+                method: 'DELETE',  
+                headers: {
+                  'Content-Type': 'application/json' 
+                }
+              })
+              .then(response => {
+                console.log('Response status:', response.status); 
+                return response.json();  
+              })
+              .then(data => {
+                console.log('Response data:', data); 
+                // Check if deletion was successful
+                if (data.success) {
+                  modal.hide();
+                  const row = deleteBtn.closest('tr');
+                  if (row) {
+                    row.style.transition = 'opacity 0.3s';
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                      row.remove();
+                      // Show success message
+                      const alert = document.createElement('div');
+                      alert.className = 'alert alert-success alert-dismissible fade show';
+                      alert.setAttribute('role', 'alert');
+                      alert.innerHTML = 'Employee deleted successfully<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                      const container = document.querySelector('.container-fluid');
+                      if (container) {
+                        container.prepend(alert);
+                        // Auto-hide success message
+                        setTimeout(() => {
+                          if (alert.parentNode) {
+                            alert.remove();
+                          }
+                        }, 3000);
+                      }
+                    }, 300);
+                  }
+                } else {
+                  // Show error message from server or default error
+                  alert('Error deleting employee: ' + (data.message || 'Unknown error'));
+                  if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                  }
+                }
+              })
+              .catch(error => {
+                console.error('Error:', error);  
+                alert('Error deleting employee. Please try again.'); 
+                if (deleteBtn) {
+                  deleteBtn.disabled = false;
+                  deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                }
+              });
+            };
+          } else {
+            console.error('Confirm button not found!');
+          }
+          
+          try {
+            modal.show();
+            console.log('Modal should be showing now');  
+            
+            setTimeout(() => {
+              if (modalElement.style.display !== 'block') {
+                console.log('Using fallback modal display');
+                modalElement.style.display = 'block';
+                modalElement.classList.add('show');
+                document.body.classList.add('modal-open');
+                
+             
+                const backdrop = document.createElement('div');
+                backdrop.className = 'modal-backdrop fade show';
+                backdrop.id = 'modal-backdrop-fallback';
+                document.body.appendChild(backdrop);
+                
+              
+                const closeBtns = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+                closeBtns.forEach(btn => {
+                  btn.onclick = function() {
+                    modalElement.style.display = 'none';
+                    modalElement.classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    const fallbackBackdrop = document.getElementById('modal-backdrop-fallback');
+                    if (fallbackBackdrop) {
+                      fallbackBackdrop.remove();
+                    }
+                  };
+                });
+              }
+            }, 500);
+          } catch (error) {
+            console.error('Error showing modal:', error);
+            alert('Error showing modal');
+          }
+        });
+      });
+    });

@@ -1,0 +1,98 @@
+extends ../layout
+
+block content
+  .container.mt-4
+    .row.mb-4
+      .col-12
+        .d-flex.justify-content-between.align-items-center
+          div
+            h2 Employee Detail
+          div
+            a.btn.btn-outline-secondary(href='/employees')
+              i.fas.fa-arrow-left.me-2
+              | Back to Employee
+
+
+    // Employee information card
+    if employee
+      .card.mb-4
+        .card-header
+          h5.mb-0 Employee Information
+        .card-body
+          .row
+            .col-md-6
+              .mb-3
+                strong Name:
+                |  #{employee.first_name} #{employee.last_name}
+              .mb-3
+                strong Employee ID:
+                |  #{employee.employee_id}
+              .mb-3
+                strong Department:
+                |  #{employee.department}
+              .mb-3
+                strong Position:
+                |  #{employee.position}
+            .col-md-6
+              .mb-3
+                strong Branch:
+                |  #{employee.branch}
+              .mb-3
+                strong Email:
+                |  #{employee.email}
+              .mb-3
+                strong Phone:
+                |  #{employee.phone}
+              .mb-3
+                strong Status:
+                span.badge(class=employee.status === 'active' ? 'bg-success' : 'bg-danger')
+                  |  #{employee.status}
+
+          // Action button
+          .mt-4
+            a.btn.btn-primary(href='/employees/' + employee.id + '/edit')
+              i.fas.fa-edit.me-2
+              | Edit Employee
+            a.btn.btn-warning(href='/asset-assignments/return?employee=' + employee.id)
+              i.fas.fa-undo.me-2
+              | Return Asset
+
+      .card.mt-4
+        .card-header
+          h5.mb-0 Current Asset Assignment
+        .card-body
+          if assignments && assignments.length > 0
+            .table-responsive
+              table.table.table-striped
+                thead
+                  tr
+                    th Asset
+                    th Asset Tag
+                    th Assigned Date
+                    th Status
+                    th Actions
+                tbody
+                  each assignment in assignments
+                    tr
+                      td= assignment.asset ? assignment.asset.name : 'N/A'
+                      td= assignment.asset ? assignment.asset.asset_tag : 'N/A'
+                      td= new Date(assignment.assigned_date).toLocaleDateString()
+                      td
+                        span.badge.bg-primary Assigned
+                      td
+                        .btn-group.btn-group-sm
+                          // Return asset button
+                          a.btn.btn-outline-warning(href='/asset-assignments/return?asset=' + assignment.asset.id) Return
+                          // View asset details button
+                          a.btn.btn-outline-info(href='/assets/' + assignment.asset.id) View
+          else 
+            .text-center.text-muted
+              i.fas.fa-inbox.fa-3x.mb-3
+              h5 No Current Assignments
+              p This employee currently has no asset assigned to them.
+    else
+      .card
+        .card-body.text-center.text-danger
+          h3 Employee Not Found
+          p The requested employee could not be found.
+          a.btn.btn-primary(href='/employees') Back to Employees

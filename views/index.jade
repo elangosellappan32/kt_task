@@ -1,0 +1,101 @@
+extends layout
+
+block content
+  .container-fluid.px-4
+    h1.mb-4 Asset Management Dashboard
+    
+    // Dashboard  Cards
+    .row.mb-4
+      .col-md-3
+        .card.bg-primary.text-white
+          .card-body
+            .d-flex.justify-content-between
+              div
+                h4.card-title Total Assets
+                h2.display-6= assetCount
+              .align-self-center
+                i.fas.fa-boxes.fa-2x
+      .col-md-3
+        .card.bg-success.text-white
+          .card-body
+            .d-flex.justify-content-between
+              div
+                h4.card-title Employees
+                h2.display-6= employeeCount
+              .align-self-center
+                i.fas.fa-users.fa-2x
+      .col-md-3
+        .card.bg-warning.text-white
+          .card-body
+            .d-flex.justify-content-between
+              div
+                h4.card-title Assigned Assets
+                h2.display-6= assignedAssetCount
+              .align-self-center
+                i.fas.fa-hand-holding-box.fa-2x
+      .col-md-3
+        .card.bg-info.text-white
+          .card-body
+            .d-flex.justify-content-between
+              div
+                h4.card-title Available Assets
+                h2.display-6= Math.max(0, assetCount - assignedAssetCount)
+              .align-self-center
+                i.fas.fa-check-circle.fa-2x
+    
+    //extra cards
+    .card.mb-4
+      .card-header
+        h5.mb-0 Quick Actions
+      .card-body
+        .row.g-3
+          .col-md-3.col-sm-6
+            a.btn.btn-primary.btn-lg.w-100(href='/assets/add')
+              i.fas.fa-plus.me-2
+              | Add Asset
+          .col-md-3.col-sm-6
+            a.btn.btn-success.btn-lg.w-100(href='/asset-assignments/issue')
+              i.fas.fa-hand-holding-box.me-2
+              | Issue Asset
+          .col-md-3.col-sm-6
+            a.btn.btn-warning.btn-lg.w-100(href='/asset-assignments/return')
+              i.fas.fa-undo.me-2
+              | Return Asset
+          .col-md-3.col-sm-6
+            a.btn.btn-info.btn-lg.w-100(href='/stock')
+              i.fas.fa-chart-bar.me-2
+              | View Stock
+    
+    // Recent Activity tab
+    .card
+      .card-header
+        h5.mb-0 Recent Activity
+      .card-body
+        if activities && activities.length > 0
+          .list-group.list-group-flush
+            each activity in activities
+              .list-group-item
+                .d-flex.justify-content-between.align-items-start
+                  div
+                    h6.mb-1= activity.assetName
+                    p.mb-1.text-muted
+                      small
+                        | #{activity.assetTag} • 
+                        if activity.employeeName !== 'Unassigned'
+                          | Assigned to #{activity.employeeName}
+                        else
+                          | #{activity.employeeName}
+                  small.text-muted= new Date(activity.date).toLocaleDateString()
+                  .ms-2
+                    span.badge.rounded-pill(class={
+                      'bg-primary': activity.status === 'assigned',
+                      'bg-success': activity.status === 'returned',
+                      'bg-warning': activity.status === 'under_maintenance',
+                      'bg-danger': activity.status === 'lost',
+                      'bg-secondary': activity.status === 'damaged'
+                    })= activity.status.charAt(0).toUpperCase() + activity.status.slice(1)
+        else
+          .text-center.text-muted
+            i.fas.fa-clock.fa-3x.mb-3
+            h5 No recent activity
+            p Asset activity will appear here once you start using the system.
