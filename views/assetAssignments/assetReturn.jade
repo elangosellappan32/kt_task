@@ -2,54 +2,61 @@ extends ../layout
 
 block content
   .container-fluid.px-4
+
     .d-flex.justify-content-between.align-items-center.mb-4
       h1.mb-0 Return Asset
       a.btn.btn-secondary(href='/assets')
         i.fas.fa-arrow-left.me-2
         | Back to Assets
-    
+
     .card
       .card-body
+
+        // display info after no asset assigned 
         if assignments.length === 0
           .alert.alert-info
             i.fas.fa-info-circle.me-2
-            | No assets currently assigned. All assets are available.
+            | No assets are assigned at the moment.
         else
+          //display the list of asset
           each assignment in assignments
+
+            // seperate asset assingmentcard 
             .card.mb-3.border
               .card-header.d-flex.justify-content-between.align-items-center
                 div
                   h6.mb-0= assignment.asset.name
-                  small.text-muted Assigned to: #{assignment.employee.first_name} #{assignment.employee.last_name}
+                  small.text-muted Assigned to #{assignment.employee.first_name} #{assignment.employee.last_name}
                 span.badge.bg-primary Assigned
+
               .card-body
+                // Form for asset form return
                 form(method='POST', action='/asset-assignments/return')
                   input(type='hidden', name='assignment_id', value=assignment.id)
+
                   .row.g-3
                     .col-md-4
                       label.form-label
                         i.fas.fa-tag.me-1
                         | Asset Tag
                       input.form-control(type='text', value=assignment.asset.asset_tag || 'N/A', readonly)
-                    
                     .col-md-4
                       label.form-label
                         i.fas.fa-calendar.me-1
                         | Assigned Date
                       input.form-control(type='text', value=new Date(assignment.assigned_date).toLocaleDateString(), readonly)
-                    
                     .col-md-4
                       label.form-label
                         i.fas.fa-user.me-1
                         | Employee
                       input.form-control(type='text', value=`${assignment.employee.first_name} ${assignment.employee.last_name}`, readonly)
-                    
+                    // Condition of asset being returned
                     .col-md-6
                       label.form-label
                         i.fas.fa-clipboard-check.me-1
                         | Return Condition *
                       select.form-select(name='return_condition', required)
-                        option(value='') Select condition...
+                        option(value='') -- Select condition --
                         option(value='excellent') Excellent
                         option(value='good') Good
                         option(value='fair') Fair
@@ -57,13 +64,13 @@ block content
                         option(value='damaged') Damaged
                         option(value='lost') Lost
                         option(value='stolen') Stolen
-                    
+
+                    // Additional note for return condition
                     .col-md-12
                       label.form-label
                         i.fas.fa-sticky-note.me-1
-                        | Return Notes
-                      textarea.form-control(name='return_notes', rows='2', placeholder='Details about the asset condition...')
-                    
+                        | Notes
+                      textarea.form-control(name='return_notes', rows='2', placeholder='Add details about the condition if needed...')
                     .col-md-12.mt-3
                       button.btn.btn-success.btn-sm(type='submit')
                         i.fas.fa-undo.me-2

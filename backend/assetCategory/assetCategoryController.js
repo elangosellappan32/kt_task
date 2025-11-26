@@ -1,7 +1,6 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 
-// List all asset categories
 exports.listAssetCategories = async (req, res) => {
   try {
     const categories = await db.AssetCategory.findAll({
@@ -9,13 +8,12 @@ exports.listAssetCategories = async (req, res) => {
     });
     res.render('assetCategories/assetCategories', { categories });
   } catch (error) {
-    console.error('Error fetching asset categories:', error);
+    console.error('Error fetching asset categories by order ASC:', error);
     req.flash('error_msg', 'Error loading asset categories');
     res.redirect('/');
   }
 };
 
-// Show asset category form
 exports.showAssetCategoryForm = async (req, res) => {
   try {
     let category = null;
@@ -33,7 +31,6 @@ exports.showAssetCategoryForm = async (req, res) => {
   }
 };
 
-// Create/Update asset category
 exports.saveAssetCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -41,25 +38,24 @@ exports.saveAssetCategory = async (req, res) => {
 
     if (id) {
       await db.AssetCategory.update(categoryData, { where: { id } });
-      req.flash('success_msg', 'Asset category updated successfully');
+      req.flash('success_msg', 'Asset categories are updated successfully');
     } else {
       await db.AssetCategory.create(categoryData);
-      req.flash('success_msg', 'Asset category created successfully');
+      req.flash('success_msg', 'Asset categories are created successfully');
     }
 
     res.redirect('/asset-categories');
   } catch (error) {
-    console.error('Error saving asset category:', error);
+    console.error('Error saving asset categories:', error);
     if (error.name === 'SequelizeUniqueConstraintError') {
-      req.flash('error_msg', 'Category name already exists');
+      req.flash('error_msg', 'Category names are already exists');
     } else {
-      req.flash('error_msg', 'Error saving asset category');
+      req.flash('error_msg', 'Error saving assets category');
     }
     res.redirect(`/asset-categories/${id ? `edit/${id}` : 'add'}`);
   }
 };
 
-// Get asset category by ID (for checking assets before deletion)
 exports.getAssetCategoryById = async (req, res) => {
   try {
     const category = await db.AssetCategory.findByPk(req.params.id, {
@@ -71,10 +67,9 @@ exports.getAssetCategoryById = async (req, res) => {
     });
 
     if (!category) {
-      return res.status(404).json({ success: false, message: 'Asset category not found' });
+      return res.status(404).json({ success: false, message: 'Asset categories are not found' });
     }
 
-    // Return clean JSON object
     res.json({
       id: category.id,
       name: category.name,
@@ -85,12 +80,11 @@ exports.getAssetCategoryById = async (req, res) => {
       assets: category.assets
     });
   } catch (error) {
-    console.error('Error fetching asset category:', error);
-    res.status(500).json({ success: false, message: 'Error fetching asset category' });
+    console.error('Error fetching asset categories:', error);
+    res.status(500).json({ success: false, message: 'Error fetching asset categories' });
   }
 };
 
-// Delete asset category
 exports.deleteAssetCategory = async (req, res) => {
   try {
     const category = await db.AssetCategory.findByPk(req.params.id, {
@@ -101,17 +95,17 @@ exports.deleteAssetCategory = async (req, res) => {
     });
 
     if (!category) {
-      return res.status(404).json({ success: false, message: 'Asset category not found' });
+      return res.status(404).json({ success: false, message: 'Asset categories are not found' });
     }
 
     if (category.assets && category.assets.length > 0) {
-      return res.status(400).json({ success: false, message: 'Cannot delete category with associated assets' });
+      return res.status(400).json({ success: false, message: 'Cannot delete categories with associated assets' });
     }
 
     await db.AssetCategory.destroy({ where: { id: req.params.id } });
-    res.json({ success: true, message: 'Asset category deleted successfully' });
+    res.json({ success: true, message: 'Asset categories are  deleted successfully' });
   } catch (error) {
-    console.error('Error deleting asset category:', error);
-    res.status(500).json({ success: false, message: 'Error deleting asset category' });
+    console.error('Error deleting asset categories:', error);
+    res.status(500).json({ success: false, message: 'Error deleting asset categories' });
   }
 };

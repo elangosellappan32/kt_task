@@ -22,10 +22,10 @@ router.use('/stock', stock);
 router.use('/asset-assignments', assetAssignments);
 router.use('/asset-history', assetHistory);
 
-// Login route - directly serve login page
+// Login route
 router.get('/login', (req, res) => res.render('auth/login'));
 
-// Login Handle
+
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', {
     successRedirect: '/dashboard',
@@ -34,7 +34,7 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
-// Home Page - Dashboard with real data (temporarily without auth for testing)
+//get dashboard data 
 router.get('/', async (req, res) => {
   try {
     // Get actual counts from database

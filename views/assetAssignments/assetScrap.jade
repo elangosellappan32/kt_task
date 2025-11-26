@@ -7,22 +7,22 @@ block content
       a.btn.btn-secondary(href='/assets')
         i.fas.fa-arrow-left.me-2
         | Back to Assets
-    
+
     .card
       .card-body
         if assets.length === 0
           .alert.alert-warning
             i.fas.fa-exclamation-triangle.me-2
-            | No assets available to scrap. All assets are already retired.
+            | No resources to salvage. All assets are already retired.
         else
-          form(method='POST', action='/asset-assignments/assetScrap')
+          form(method='POST', action='/asset-assignments/scrap')
             .row.g-3
               .col-md-12
                 label.form-label
                   i.fas.fa-box.me-1
                   | Select Asset to Scrap *
                 select.form-select(name='asset_id', required)
-                  option(value='') Choose an asset to scrap...
+                  option(value='') Select which asset to scrap...
                   each asset in assets
                     option(value=asset.id)= `${asset.name} (${asset.asset_tag}) - ${asset.Category ? asset.Category.name : 'Uncategorized'} - Status: ${asset.status}`
               
@@ -30,13 +30,13 @@ block content
                 label.form-label
                   i.fas.fa-sticky-note.me-1
                   | Scrap Reason *
-                textarea.form-control(name='scrap_reason', rows='4', required, placeholder='Provide reason for scrapping this asset (e.g., obsolete, beyond repair, etc.)')
+                textarea.form-control(name='scrap_reason', rows='4', required, placeholder='Scrap reason: e.g. obsolete, beyond repair etc.')
               
               .col-md-12.mt-4
                 .alert.alert-danger
                   i.fas.fa-exclamation-triangle.me-2
                   strong Warning:
-                  |  This action will mark the asset as retired/scrapped. The asset will no longer appear in regular asset lists but will be available in reports.
+                  | This will retire/scrap that asset. The asset will be removed from the standard lists of assets, but you still will see them in reports.
               
               .col-md-12.mt-3
                 button.btn.btn-danger(type='submit')

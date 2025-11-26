@@ -1,25 +1,22 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 
-// Show asset history
 exports.showAssetHistory = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get asset with full history
+    // get asset with id
     const asset = await db.Asset.findByPk(id, {
       include: [{
         model: db.AssetCategory,
         as: 'Category'
       }]
     });
-
     if (!asset) {
       req.flash('error_msg', 'Asset not found');
       return res.redirect('/assets');
     }
 
-    // Get all assignments for this asset
     const assignments = await db.AssetAssignment.findAll({
       where: { asset_id: id },
       include: [
@@ -35,10 +32,10 @@ exports.showAssetHistory = async (req, res) => {
       order: [['assigned_date', 'DESC']]
     });
 
-    // Create timeline events
+    // Create timeline for chronological order 
     const timeline = [];
     
-    // Add purchase event if purchase date exists
+    //start purchase if the date exist with data
     if (asset.purchase_date) {
       timeline.push({
         date: asset.purchase_date,
@@ -49,8 +46,7 @@ exports.showAssetHistory = async (req, res) => {
         color: 'success'
       });
     }
-
-    // Add assignment events
+  // create assignment 
     assignments.forEach(assignment => {
       timeline.push({
         date: assignment.assigned_date,
@@ -62,7 +58,6 @@ exports.showAssetHistory = async (req, res) => {
         color: 'primary'
       });
 
-      // Add return event if returned
       if (assignment.return_date) {
         timeline.push({
           date: assignment.return_date,
@@ -79,7 +74,6 @@ exports.showAssetHistory = async (req, res) => {
     // Sort timeline by date
     timeline.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    // Calculate utilization metrics
     const totalDays = asset.purchase_date ? 
       Math.ceil((new Date() - new Date(asset.purchase_date)) / (1000 * 60 * 60 * 24)) : 0;
     
@@ -117,7 +111,7 @@ exports.showAssetHistory = async (req, res) => {
   }
 };
 
-// List all assets for history selection
+// Get all assets with their category and display them in ascending order
 exports.listAssetsForHistory = async (req, res) => {
   try {
     const assets = await db.Asset.findAll({
@@ -131,7 +125,7 @@ exports.listAssetsForHistory = async (req, res) => {
     res.render('assetHistory/assetHistorySummary', { assets });
   } catch (error) {
     console.error('Assets list error:', error.message);
-    req.flash('error_msg', 'Unable to load assets list. Please try again.');
+    req.flash('error_msg', 'Unable to load assets list Please try again later.');
     res.redirect('/assets');
   }
 };

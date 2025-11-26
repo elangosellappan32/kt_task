@@ -4,9 +4,7 @@ const bcrypt = require('bcryptjs');
 module.exports = {
   up: async (queryInterface, Sequelize) => {
 
-    // ---------------------------
-    // 1️⃣ ASSET CATEGORIES (Indian Business Context)
-    // ---------------------------
+//asset category data
     const categories = await queryInterface.bulkInsert(
       'asset_categories',
       [
@@ -122,9 +120,7 @@ module.exports = {
       { returning: true }
     );
 
-    // ---------------------------
-    // 2️⃣ SUPPLIERS (Indian Companies)
-    // ---------------------------
+//supplier data 
     const suppliers = await queryInterface.bulkInsert(
       'suppliers',
       [
@@ -182,9 +178,7 @@ module.exports = {
       { returning: true }
     );
 
-    // ---------------------------
-    // 3️⃣ EMPLOYEES (Indian Names & Departments)
-    // ---------------------------
+//employee data 
     const employees = await queryInterface.bulkInsert(
       'employees',
       [
@@ -304,9 +298,7 @@ module.exports = {
       { returning: true }
     );
 
-    // ---------------------------
-    // 4️⃣ ASSETS (Indian Pricing in ₹)
-    // ---------------------------
+    //asset data
     const assets = await queryInterface.bulkInsert(
       'assets',
       [
@@ -535,17 +527,14 @@ module.exports = {
       ],
       { returning: true }
     );
-
-    // ---------------------------
-    // 5️⃣ ASSET ASSIGNMENTS
-    // ---------------------------
+//asset assignment data
     await queryInterface.bulkInsert(
       'asset_assignments',
       [
         {
-          asset_id: 2, // HP EliteBook assigned to Priya
-          employee_id: 2, // Priya Nair
-          assigned_by: 1, // Rahul Sharma (IT)
+          asset_id: 2,
+          employee_id: 2,
+          assigned_by: 1,
           assigned_date: new Date('2023-03-01'),
           expected_return_date: new Date('2024-03-01'),
           status: 'assigned',
@@ -554,9 +543,9 @@ module.exports = {
           updated_at: new Date()
         },
         {
-          asset_id: 3, // Lenovo ThinkPad assigned to Amit
-          employee_id: 3, // Amit Patel
-          assigned_by: 1, // Rahul Sharma (IT)
+          asset_id: 3, 
+          employee_id: 3,
+          assigned_by: 1,
           assigned_date: new Date('2023-04-01'),
           expected_return_date: new Date('2024-04-01'),
           status: 'assigned',
@@ -565,9 +554,9 @@ module.exports = {
           updated_at: new Date()
         },
         {
-          asset_id: 5, // Samsung Galaxy assigned to Sneha
-          employee_id: 4, // Sneha Reddy
-          assigned_by: 1, // Rahul Sharma (IT)
+          asset_id: 5,
+          employee_id: 4,
+          assigned_by: 1,
           assigned_date: new Date('2023-06-01'),
           expected_return_date: new Date('2024-06-01'),
           status: 'assigned',
@@ -576,9 +565,9 @@ module.exports = {
           updated_at: new Date()
         },
         {
-          asset_id: 7, // LG Monitor assigned to Priya
-          employee_id: 2, // Priya Nair
-          assigned_by: 1, // Rahul Sharma (IT)
+          asset_id: 7,
+          employee_id: 2,
+          assigned_by: 1,
           assigned_date: new Date('2023-03-15'),
           expected_return_date: new Date('2024-03-15'),
           status: 'assigned',
@@ -589,10 +578,7 @@ module.exports = {
       ],
       { returning: true }
     );
-
-    // ---------------------------
-    // 6️⃣ USERS (Admin Accounts)
-    // ---------------------------
+//user data 
     const hashedPassword = await bcrypt.hash('admin123', 12);
     await queryInterface.bulkInsert(
       'users',

@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
       set(value) {
-        // Hash the password before saving
+        // Hashed password
         const salt = bcrypt.genSaltSync(10);
         this.setDataValue('password', bcrypt.hashSync(value, salt));
       }
@@ -74,7 +74,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
 
-  // Instance method to check password
+  // Verify the password
   User.prototype.validPassword = function(password) {
     if (!password || !this.password) {
       return false;
@@ -82,7 +82,7 @@ module.exports = (sequelize, DataTypes) => {
     return bcrypt.compareSync(password, this.password);
   };
 
-  // Associations
+  // Association
   User.associate = (models) => {
     User.hasMany(models.AssetAssignment, {
       foreignKey: 'assigned_by',

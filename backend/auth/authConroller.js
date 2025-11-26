@@ -2,12 +2,11 @@ const db = require('../models');
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
 
-// Show login form
 exports.showLogin = (req, res) => {
   res.render('auth/login');
 };
 
-// Handle login
+// Validate user credentials and log them in
 exports.login = (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) { return next(err); }
@@ -22,19 +21,19 @@ exports.login = (req, res, next) => {
   })(req, res, next);
 };
 
-// Logout
+// logout
 exports.logout = (req, res) => {
   req.logout();
   req.flash('success_msg', 'You are logged out');
   res.redirect('/login');
 };
 
-// Show registration form
+// display the signup form to the user
 exports.showRegister = (req, res) => {
   res.render('auth/register');
 };
 
-// Handle registration
+// Validat registration and log them in
 exports.register = async (req, res) => {
   const { username, password, password2 } = req.body;
   let errors = [];
@@ -68,14 +67,13 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create new user
     const newUser = new db.User({
       username,
       password,
-      role: 'user' // Default role
+      role: 'user'
     });
 
-    // Hash password
+    // masked password 
     const salt = await bcrypt.genSalt(10);
     newUser.password = await bcrypt.hash(password, salt);
 

@@ -3,10 +3,10 @@ const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
 const stockController = require('./stockController');
 
-// Stock view page
+// get route for stock 
 router.get('/', ensureAuthenticated, stockController.stockView);
 
-// API endpoint for stock data
+// get route for stock data 
 router.get('/data', ensureAuthenticated, stockController.stockData);
 
 module.exports = router;

@@ -3,22 +3,22 @@ const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
 const assetCategoryController = require('./assetCategoryController');
 
-// Get all asset categories
+// get route for asset categories
 router.get('/', ensureAuthenticated, assetCategoryController.listAssetCategories);
 
-// Show add asset category form
+// get route for  display add asset category form
 router.get('/add', ensureAuthenticated, assetCategoryController.showAssetCategoryForm);
 
-// Add new asset category
+// post route for create asset category
 router.post('/', ensureAuthenticated, assetCategoryController.saveAssetCategory);
 
-// Show edit asset category form
+// get route asset category for edit 
 router.get('/edit/:id', ensureAuthenticated, assetCategoryController.showAssetCategoryForm);
 
-// Update asset category
+// put route for method  asset category
 router.put('/:id', ensureAuthenticated, assetCategoryController.saveAssetCategory);
 
-// Get asset category by ID (for checking assets before deletion)
+// get asset category for delete category
 router.get('/:id', ensureAuthenticated, assetCategoryController.getAssetCategoryById);
 
 // Delete asset category

@@ -1,7 +1,7 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 
-// List all assets with pagination and search
+// List all asset for search
 exports.listAssets = async (req, res) => {
   try {
     const { 
@@ -16,8 +16,7 @@ exports.listAssets = async (req, res) => {
     } = req.query;
     
     const offset = (page - 1) * limit;
-    
-    // Build where clause
+     //setup where clause
     const whereClause = { is_active: true };
     
     if (search) {
@@ -41,8 +40,7 @@ exports.listAssets = async (req, res) => {
     if (branch) {
       whereClause.branch = branch;
     }
-
-    // Build include clause
+ // setup build clause
     const includeClause = [{
       model: db.AssetCategory,
       as: 'Category',
@@ -71,7 +69,7 @@ exports.listAssets = async (req, res) => {
       order: [[sortBy, sortOrder.toUpperCase()]]
     });
 
-    // Get filter options
+    // Get filter with order 
     const [categories, branches, statuses] = await Promise.all([
       db.AssetCategory.findAll({ 
         where: { is_active: true },
@@ -82,7 +80,6 @@ exports.listAssets = async (req, res) => {
         attributes: [[db.sequelize.fn('DISTINCT', db.sequelize.col('branch')), 'branch']],
         order: [['branch', 'ASC']]
       }),
-      // Static statuses from model
       ['available', 'assigned', 'under_maintenance', 'retired']
     ]);
 
@@ -111,10 +108,18 @@ exports.listAssets = async (req, res) => {
   }
 };
 
-// Show asset details
+// push asset details
 exports.showAsset = async (req, res) => {
   try {
-    const asset = await db.Asset.findByPk(req.params.id, {
+    const assetId = parseInt(req.params.id, 10);
+    
+    // Validate asset id is a valid number
+    if (isNaN(assetId)) {
+      req.flash('error_msg', 'Invalid asset ID');
+      return res.redirect('/assets');
+    }
+    
+    const asset = await db.Asset.findByPk(assetId, {
       include: [
         { 
           model: db.AssetCategory,
@@ -139,15 +144,27 @@ exports.showAsset = async (req, res) => {
     res.render('assets/assetDetails', { asset });
   } catch (error) {
     console.error('Error fetching asset:', error);
-    res.status(500).render('error', { 
+    // Check if the request is AJAX
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      return res.status(500).json({
+        success: false,
+        message: 'Error loading asset',
+        error: process.env.NODE_ENV === 'development' ? error.message : {}
+      });
+    }
+    // For regular requests, render the error page
+    return res.status(500).render('error', { 
       message: 'Error loading asset',
-      error: { status: 500 },
-      referrer: req.headers.referer
+      error: { 
+        status: 500,
+        message: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred while loading the asset.'
+      },
+      referrer: req.headers.referer || '/assets'
     });
   }
 };
 
-// Show asset form
+// push asset form and form data 
 exports.showAssetForm = async (req, res) => {
   try {
     let asset = null;
@@ -163,7 +180,6 @@ exports.showAssetForm = async (req, res) => {
       }
     }
     
-    // Get all categories for the dropdown
     const categories = await db.AssetCategory.findAll({
       where: { is_active: true },
       order: [['name', 'ASC']]
@@ -177,13 +193,13 @@ exports.showAssetForm = async (req, res) => {
   }
 };
 
-// Create/Update asset
+// save asset
 exports.saveAsset = async (req, res) => {
   try {
     const { id } = req.params;
     let assetData = req.body;
 
-    // Clean up the data - handle empty strings for integer fields
+    // Clean up the data
     if (assetData.category_id === '') {
       delete assetData.category_id;
     }
@@ -197,7 +213,7 @@ exports.saveAsset = async (req, res) => {
       delete assetData.current_value;
     }
 
-    // Convert string numbers to actual numbers
+    // Convert string  to  numbers
     if (assetData.warranty_months) {
       assetData.warranty_months = parseInt(assetData.warranty_months);
     }
@@ -211,16 +227,12 @@ exports.saveAsset = async (req, res) => {
       assetData.category_id = parseInt(assetData.category_id);
     }
 
-    // Handle boolean field - default to true for new assets if not specified
     if (id) {
-      // For existing assets, use the checkbox value
       assetData.is_active = assetData.is_active === 'on' || assetData.is_active === true || assetData.is_active === 'true';
     } else {
-      // For new assets, default to true unless explicitly set to false
       assetData.is_active = assetData.is_active !== 'false' && assetData.is_active !== 'off' && assetData.is_active !== '0';
     }
-
-    // Generate asset tag if not provided
+  // auto genrated asset tag 
     if (!assetData.asset_tag || assetData.asset_tag.trim() === '') {
       const lastAsset = await db.Asset.findOne({
         attributes: ['asset_tag'],
@@ -230,7 +242,7 @@ exports.saveAsset = async (req, res) => {
       
       let lastId = 0;
       if (lastAsset && lastAsset.asset_tag) {
-        // Extract numeric part from asset tag (e.g., AST1005 -> 1005)
+        // Extract number from asset tag 
         const match = lastAsset.asset_tag.match(/\d+/);
         if (match) {
           lastId = parseInt(match[0]);
@@ -256,11 +268,10 @@ exports.saveAsset = async (req, res) => {
     console.error('Error saving asset:', error);
     console.error('Error details:', error.message);
     
-    // Handle unique constraint violation for asset_tag
+    // check unqiueness for asset tag 
     if (error.name === 'SequelizeUniqueConstraintError' && error.errors[0]?.path === 'asset_tag') {
-      // Try to generate a new asset tag and retry
+      // Try function to generate  new asset tag and retry
       try {
-        // Get the highest existing asset tag
         const lastAsset = await db.Asset.findOne({
           attributes: ['asset_tag'],
           order: [['asset_tag', 'DESC']],
@@ -269,21 +280,19 @@ exports.saveAsset = async (req, res) => {
         
         let lastId = 0;
         if (lastAsset && lastAsset.asset_tag) {
-          // Extract numeric part from asset tag (e.g., AST1009 -> 1009)
+          // Extract number part from asset tag
           const match = lastAsset.asset_tag.match(/\d+/);
           if (match) {
             lastId = parseInt(match[0]);
           }
         }
         
-        // Generate a new tag that's guaranteed to be unique
+        // Generate new asset tag 
         const newTag = `AST${String(lastId + 1).padStart(4, '0')}`;
         
-        // Create a new processed asset data object for retry
         let retryData = { ...req.body };
         retryData.asset_tag = newTag;
         
-        // Process the retry data the same way as original data
         if (retryData.category_id === '') {
           delete retryData.category_id;
         }
@@ -297,7 +306,7 @@ exports.saveAsset = async (req, res) => {
           delete retryData.current_value;
         }
 
-        // Convert string numbers to actual numbers
+        // Convert string to numbers
         if (retryData.warranty_months) {
           retryData.warranty_months = parseInt(retryData.warranty_months);
         }
@@ -311,25 +320,21 @@ exports.saveAsset = async (req, res) => {
           retryData.category_id = parseInt(retryData.category_id);
         }
 
-        // Handle boolean field - use same logic as main flow
         if (id) {
-          // For existing assets, use the checkbox value
           retryData.is_active = retryData.is_active === 'on' || retryData.is_active === true || retryData.is_active === 'true';
         } else {
-          // For new assets, default to true unless explicitly set to false
           retryData.is_active = retryData.is_active !== 'false' && retryData.is_active !== 'off' && retryData.is_active !== '0';
         }
         
         console.log('Retrying with guaranteed unique tag:', newTag);
         console.log('Retrying with processed data:', retryData);
         
-        // Retry the creation with the processed data
+        // Retry the create asset with the processed data
         await db.Asset.create(retryData);
         req.flash('success_msg', `Asset created successfully with tag: ${newTag}`);
         return res.redirect('/assets');
       } catch (retryError) {
         console.error('Retry failed:', retryError);
-        // If retry also fails, show the original error
         const categories = await db.AssetCategory.findAll();
         res.status(500).render('assets/assetForm', {
           asset: req.body,
@@ -349,13 +354,88 @@ exports.saveAsset = async (req, res) => {
   }
 };
 
-// Delete asset
+// Delete asset 
 exports.deleteAsset = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  
   try {
-    await db.Asset.destroy({ where: { id: req.params.id } });
-    res.json({ success: true, message: 'Asset deleted successfully' });
+    // Get asset ID from URL parameters or request body
+    const assetId = req.params.id || (req.body && req.body.id);
+    
+    if (!assetId) {
+      await transaction.rollback();
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Asset ID is required' 
+      });
+    }
+    
+    // Check if the asset exists
+    const asset = await db.Asset.findByPk(assetId, { transaction });
+    
+    if (!asset) {
+      await transaction.rollback();
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Asset not found' 
+      });
+    }
+    
+    // Check if the asset is currently assigned
+    const activeAssignment = await db.AssetAssignment.findOne({
+      where: { 
+        asset_id: assetId,
+        status: 'assigned',
+        return_date: null
+      },
+      transaction
+    });
+    
+    if (activeAssignment) {
+      await transaction.rollback();
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete an asset that is currently assigned. Please return it first.' 
+      });
+    }
+    
+    // Soft delete the asset
+    await db.Asset.update(
+      { is_active: false },
+      { 
+        where: { id: assetId },
+        transaction
+      }
+    );
+    
+    // Create a history record 
+    if (db.AssetHistory) {
+      try {
+        await db.AssetHistory.create({
+          asset_id: assetId,
+          action: 'deleted',
+          description: 'Asset was deleted from the system',
+          changed_by: req.user ? req.user.id : null
+        }, { transaction });
+      } catch (historyError) {
+        console.warn('Warning: Could not create asset history record:', historyError.message);
+      }
+    }
+    
+    await transaction.commit();
+    
+    res.json({ 
+      success: true, 
+      message: 'Asset deleted successfully' 
+    });
+    
   } catch (error) {
+    await transaction.rollback();
     console.error('Error deleting asset:', error);
-    res.status(500).json({ success: false, message: 'Error deleting asset' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error deleting asset',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };

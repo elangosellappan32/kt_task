@@ -6,55 +6,61 @@ block content
       h1.mb-0 Issue Asset
       a.btn.btn-secondary(href='/assets')
         i.fas.fa-arrow-left.me-2
-        | Back to Assets
-    
+        | Back
+
     .card
       .card-body
         form(method='POST', action='/asset-assignments/issue')
           .row.g-3
+
+            // Choose asset
             .col-md-6
               label.form-label
                 i.fas.fa-box.me-1
                 | Select Asset *
               select.form-select(name='asset_id', required)
-                option(value='') Choose an asset...
+                option(value='') -- Select an asset --
                 each asset in availableAssets
-                  option(value=asset.id)= `${asset.name} (${asset.asset_tag}) - ${asset.Category ? asset.Category.name : 'Uncategorized'}`
-            
+                  option(value=asset.id)= `${asset.name} (${asset.asset_tag}) - ${asset.Category ? asset.Category.name : 'No Category'}`
+
+            // Choose employee in dropdown
             .col-md-6
               label.form-label
                 i.fas.fa-user.me-1
                 | Select Employee *
               select.form-select(name='employee_id', required)
-                option(value='') Choose an employee...
+                option(value='') -- Select an employee --
                 each employee in employees
-                  option(value=employee.id, selected=selectedEmployee == employee.id)= `${employee.first_name} ${employee.last_name} - ${employee.department}`
-            
+                  option(value=employee.id, selected=selectedEmployee == employee.id)= `${employee.first_name} ${employee.last_name} (${employee.department})`
+
+            // Return date
             .col-md-6
               label.form-label
                 i.fas.fa-calendar.me-1
                 | Expected Return Date
               input.form-control(type='date', name='expected_return_date')
-              small.form-text.text-muted Optional - when asset should be returned
-            
+              small.form-text.text-muted This is optional
+
             .col-md-12
               label.form-label
                 i.fas.fa-sticky-note.me-1
                 | Notes
-              textarea.form-control(name='notes', rows='3', placeholder='Any additional notes about this assignment...')
-            
+              textarea.form-control(name='notes', rows='3', placeholder='Add any notes if needed...')
+
+            // Submit and Cancel
             .col-md-12.mt-4
               button.btn.btn-primary(type='submit')
                 i.fas.fa-hand-holding-box.me-2
                 | Issue Asset
               a.btn.btn-secondary.ms-2(href='/assets') Cancel
-    
+
+    // alert Message when no assets or employee
     if availableAssets.length === 0
       .alert.alert-warning.mt-4
         i.fas.fa-exclamation-triangle.me-2
-        | No available assets to issue. All assets are either assigned or retired.
-    
+        | No available assets right now.
+
     if employees.length === 0
       .alert.alert-warning.mt-4
         i.fas.fa-exclamation-triangle.me-2
-        | No active employees found. Please add employees before issuing assets.
+        | No employees found. Add employees before issuing assets.

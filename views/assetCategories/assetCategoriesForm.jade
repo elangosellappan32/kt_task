@@ -8,10 +8,10 @@ block content
         i.fas.fa-arrow-left.me-2
         | Back to Categories
     
-    // Asset Category Form Section - allows adding new categories or editing existing ones
+    // Asset Category Form Section
     .card
       .card-body
-        // Main form for category data entry
+        // form for category entry 
         form(method='POST', action=category ? `/asset-categories/${category.id}?_method=PUT` : '/asset-categories')
           .row.g-3
             // Category Name field
@@ -19,7 +19,7 @@ block content
               label.form-label
                 i.fas.fa-tags.me-1
                 | Category Name *
-              // Required text input for category name
+              // Required text 
               input.form-control(type='text', name='name', value=category && category.name ? category.name : '', required)
             
             // Description field
@@ -27,7 +27,7 @@ block content
               label.form-label
                 i.fas.fa-align-left.me-1
                 | Description
-              // Optional textarea for category description
+              // Optional textarea
               textarea.form-control(name='description', rows='3')= category && category.description ? category.description : ''
             
             // Expected Lifespan field
@@ -35,33 +35,23 @@ block content
               label.form-label
                 i.fas.fa-clock.me-1
                 | Expected Lifespan (months)
-              // Number input for expected lifespan in months (minimum 1)
               input.form-control(type='number', name='expected_lifespan_months', value=category && category.expected_lifespan_months ? category.expected_lifespan_months : '', min='1')
-              // Helper text explaining the field purpose
               small.form-text.text-muted Expected useful life in months
-            
             // Depreciation Rate field
             .col-md-6
               label.form-label
                 i.fas.fa-chart-line.me-1
                 | Annual Depreciation Rate (%)
-              // Number input for depreciation rate (allows decimals, 0-100 range)
               input.form-control(type='number', step='0.01', name='depreciation_rate', value=category && category.depreciation_rate ? category.depreciation_rate : '', min='0', max='100')
-              // Helper text explaining the field purpose
               small.form-text.text-muted Annual depreciation rate percentage
-            
-            // Active Status checkbox
             .col-md-12.mt-4
               .form-check
-                // Checkbox to mark category as active/inactive
+                // Checkbox
                 input.form-check-input(type='checkbox', name='is_active', id='isActive', checked=category && category.is_active !== false)
                 label.form-check-label(for='isActive') Active
-            
-            // Form action buttons
             .col-md-12.mt-4
-              // Submit button (text changes based on edit/create mode)
               button.btn.btn-primary(type='submit')
                 i.fas.fa-save.me-2
                 | #{category ? 'Update Category' : 'Create Category'}
-              // Cancel button to return to category list
+              // Cancel button
               a.btn.btn-secondary.ms-2(href='/asset-categories') Cancel

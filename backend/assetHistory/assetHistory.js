@@ -3,10 +3,10 @@ const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
 const assetHistoryController = require('./assetHistoryController');
 
-// List assets for history selection
+// get route method for fetch all history 
 router.get('/', ensureAuthenticated, assetHistoryController.listAssetsForHistory);
 
-// Show specific asset history
+// get route method for specific asset data 
 router.get('/:id', ensureAuthenticated, assetHistoryController.showAssetHistory);
 
 module.exports = router;

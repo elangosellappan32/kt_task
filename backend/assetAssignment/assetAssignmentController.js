@@ -1,12 +1,11 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 
-// Show issue asset form
 exports.showIssueAssetForm = async (req, res) => {
   try {
     const { employee } = req.query;
     
-    // Get available assets (not assigned, not retired)
+    // Get available asset
     const availableAssets = await db.Asset.findAll({
       where: {
         status: 'available',
@@ -19,7 +18,7 @@ exports.showIssueAssetForm = async (req, res) => {
       order: [['name', 'ASC']]
     });
 
-    // Get all employees
+    // Get all employee which are active 
     const employees = await db.Employee.findAll({
       where: {
         status: 'active'
@@ -39,7 +38,7 @@ exports.showIssueAssetForm = async (req, res) => {
   }
 };
 
-// Issue asset to employee
+// Issue asset to employees
 exports.issueAsset = async (req, res) => {
   try {
     const { asset_id, employee_id, expected_return_date, notes } = req.body;
@@ -51,25 +50,24 @@ exports.issueAsset = async (req, res) => {
       return res.redirect('/assets/issue');
     }
 
-    // Check if employee exists and is active
+    // validate employee exists and active
     const employee = await db.Employee.findByPk(employee_id);
     if (!employee || employee.status !== 'active') {
-      req.flash('error_msg', 'Invalid employee selection');
+      req.flash('error_msg', 'Invalid employee selection for asset assignment ');
       return res.redirect('/assets/issue');
     }
 
-    // Create asset assignment
+    // Create asset for assigned 
     const assignment = await db.AssetAssignment.create({
       asset_id,
       employee_id,
-      assigned_by: req.user ? req.user.id : 1, // Use authenticated user or default
+      assigned_by: req.user ? req.user.id : 1, //authentication by user 
       assigned_date: new Date(),
       expected_return_date: expected_return_date || null,
       notes: notes || null,
       status: 'assigned'
     });
 
-    // Update asset status
     await db.Asset.update(
       { status: 'assigned' },
       { where: { id: asset_id } }
@@ -79,12 +77,11 @@ exports.issueAsset = async (req, res) => {
     res.redirect('/assets');
   } catch (error) {
     console.error('Error issuing asset:', error);
-    req.flash('error_msg', 'Error issuing asset');
+    req.flash('error_msg', 'Error issuing asset for the employee');
     res.redirect('/assets/issue');
   }
 };
 
-// Show return asset form
 exports.showReturnAssetForm = async (req, res) => {
   try {
     const { asset, employee } = req.query;
@@ -98,7 +95,7 @@ exports.showReturnAssetForm = async (req, res) => {
       whereClause.employee_id = employee;
     }
 
-    // Get active assignments
+    // fetch and return all active assignment
     assignments = await db.AssetAssignment.findAll({
       where: whereClause,
       include: [
@@ -130,12 +127,10 @@ exports.showReturnAssetForm = async (req, res) => {
   }
 };
 
-// Return asset from employee
+// Return asset to the company
 exports.returnAsset = async (req, res) => {
   try {
     const { assignment_id, return_condition, return_notes } = req.body;
-    
-    // Find the assignment
     const assignment = await db.AssetAssignment.findByPk(assignment_id, {
       include: [{
         model: db.Asset,
@@ -148,7 +143,6 @@ exports.returnAsset = async (req, res) => {
       return res.redirect('/assets/return');
     }
 
-    // Update assignment
     await db.AssetAssignment.update({
       return_date: new Date(),
       return_condition,
@@ -158,7 +152,6 @@ exports.returnAsset = async (req, res) => {
       where: { id: assignment_id }
     });
 
-    // Update asset status based on return condition
     let newStatus = 'available';
     if (return_condition === 'damaged') {
       newStatus = 'under_maintenance';
@@ -170,7 +163,7 @@ exports.returnAsset = async (req, res) => {
       { status: newStatus },
       { where: { id: assignment.asset_id } }
     );
-
+  // flash message  for success and error 
     req.flash('success_msg', 'Asset returned successfully');
     res.redirect('/assets');
   } catch (error) {
@@ -180,10 +173,9 @@ exports.returnAsset = async (req, res) => {
   }
 };
 
-// Show scrap asset form
 exports.showScrapAssetForm = async (req, res) => {
   try {
-    // Get assets that can be scrapped (not already retired)
+    // fetch and return assets that can be scrapped
     const assets = await db.Asset.findAll({
       where: {
         status: {
@@ -206,19 +198,16 @@ exports.showScrapAssetForm = async (req, res) => {
   }
 };
 
-// Scrap asset
 exports.scrapAsset = async (req, res) => {
   try {
     const { asset_id, scrap_reason } = req.body;
     
-    // Check if asset exists
     const asset = await db.Asset.findByPk(asset_id);
     if (!asset) {
       req.flash('error_msg', 'Asset not found');
       return res.redirect('/assets/assetScrap');
     }
 
-    // Check if asset is currently assigned
     const activeAssignment = await db.AssetAssignment.findOne({
       where: {
         asset_id,
@@ -231,7 +220,6 @@ exports.scrapAsset = async (req, res) => {
       return res.redirect('/assets/scrap');
     }
 
-    // Update asset status to retired
     await db.Asset.update({
       status: 'retired',
       notes: (asset.notes || '') + '\n\nScrapped: ' + scrap_reason

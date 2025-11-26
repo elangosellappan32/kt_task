@@ -1,11 +1,7 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
-
-/**
- * List all employees with pagination and search
- * GET /employees
- */
+//Get method To view all employee
 exports.listEmployees = async (req, res) => {
   try {
     const { 
@@ -91,10 +87,7 @@ exports.listEmployees = async (req, res) => {
   }
 };
 
-/**
- * Show employee details with assigned assets
- * GET /employees/:id
- */
+// Show employee details with assigned assets with get method
 exports.showEmployee = async (req, res) => {
   try {
     console.log('Fetching employee with ID:', req.params.id);
@@ -143,7 +136,7 @@ exports.showEmployee = async (req, res) => {
   }
 };
 
-// Show employee form
+//display employee form 
 exports.showEmployeeForm = async (req, res) => {
   try {
     let employee = {};
@@ -157,7 +150,7 @@ exports.showEmployeeForm = async (req, res) => {
       }
     }
     
-    // Get departments and branches for the form
+    // Get departments and branches for employee form
     const departments = [];
     const branches = [];
     
@@ -174,7 +167,7 @@ exports.showEmployeeForm = async (req, res) => {
   }
 };
 
-// Create/Update employee
+// save employee for create and update
 exports.saveEmployee = async (req, res) => {
   try {
     const { id } = req.params;
@@ -187,9 +180,9 @@ exports.saveEmployee = async (req, res) => {
       await db.Employee.update(employeeData, { where: { id } });
       req.flash('success_msg', 'Employee updated successfully');
     } else {
-      // Generate employee ID if new employee
+      // Generate employee ID
       if (!employeeData.employee_id) {
-        // Find the highest numeric employee ID
+        // Find the highest numeric id
         const employees = await db.Employee.findAll({
           attributes: ['employee_id'],
           order: [['employee_id', 'DESC']],

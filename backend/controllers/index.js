@@ -1,7 +1,6 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 
-// Dashboard controller
 exports.getDashboard = async (req, res) => {
   try {
     const [assets, employees, assignedAssets, recentActivities] = await Promise.all([
@@ -28,10 +27,9 @@ exports.getDashboard = async (req, res) => {
       })
     ]);
 
-    console.log('Recent activities found:', recentActivities.length);
+    console.log('activities found:', recentActivities.length);
     console.log('First activity:', JSON.stringify(recentActivities[0], null, 2));
 
-    // Format activity data
     const activities = recentActivities.map(activity => ({
       id: activity.id,
       type: activity.status,
@@ -53,7 +51,7 @@ exports.getDashboard = async (req, res) => {
       activities: activities
     });
   } catch (error) {
-    console.error('Error fetching dashboard data:', error);
+    console.error('Error fetching data for ashboard:', error);
     res.status(500).render('error', { 
       message: 'Error loading dashboard',
       error: { status: 500 }

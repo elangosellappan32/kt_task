@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../models');
 
 module.exports = function(passport) {
-  // Local Strategy
+  // // Setting up the login with password and username
   passport.use(
     new LocalStrategy({ usernameField: 'username' }, async (username, password, done) => {
       try {
@@ -13,7 +13,7 @@ module.exports = function(passport) {
           return done(null, false, { message: 'That username is not registered' });
         }
 
-        // Match password
+        // check the matched password
         const isMatch = await bcrypt.compare(password, user.password);
         if (isMatch) {
           return done(null, user);
@@ -26,12 +26,12 @@ module.exports = function(passport) {
     })
   );
 
-  // Serialize user
+  // save user ID into the session
   passport.serializeUser((user, done) => {
     done(null, user.id);
   });
 
-  // Deserialize user
+  // load the user data from the session ID
   passport.deserializeUser(async (id, done) => {
     try {
       const user = await db.User.findByPk(id);

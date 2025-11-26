@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  .container.mt-5
+    .row.justify-content-center
+      .col-md-8
+        .card.border-danger
+          .card-header.bg-danger.text-white
+            h4.mb-0
+              i.fas.fa-exclamation-triangle.me-2
+              | Error #{error.status || 500}
+          .card-body
+            h5.card-title= message
+            p.card-text= error.message || 'An unexpected error occurred.'
+            if error.stack && process.env.NODE_ENV === 'development'
+              pre.error-stack.bg-light.p-3.mt-3= error.stack
+            
+            if referrer
+              a.btn.btn-primary.mt-3(href=referrer)
+                i.fas.fa-arrow-left.me-2
+                | Go Back
+            else
+              a.btn.btn-primary.mt-3(href='/')
+                i.fas.fa-home.me-2
+                | Return Home

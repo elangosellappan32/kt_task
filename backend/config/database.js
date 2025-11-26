@@ -1,6 +1,7 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
+//setup sequelize
 const sequelize = new Sequelize(
   process.env.DB_NAME || 'kt_task',
   process.env.DB_USER || 'postgres', 
@@ -29,17 +30,16 @@ const connectDB = async () => {
   try {
     await sequelize.authenticate();
     
-    // Import models
+    //models used for fetching and storing data
     const models = require('../models');
     
-    // Set up associations if any
     Object.keys(models).forEach(modelName => {
       if (models[modelName].associate) {
         models[modelName].associate(models);
       }
     });
     
-    // Sync models with database
+    // Sync models 
     if (process.env.NODE_ENV === 'development') {
       await sequelize.sync({ alter: true });
     }

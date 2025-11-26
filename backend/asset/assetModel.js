@@ -91,7 +91,7 @@ module.exports = (sequelize, DataTypes) => {
   });
 
   Asset.associate = function(models) {
-    // Define associations here
+    // Define association for the other models
     Asset.belongsTo(models.AssetCategory, { foreignKey: 'category_id', as: 'Category' });
     Asset.belongsTo(models.Supplier, { foreignKey: 'supplier_id' });
     Asset.hasMany(models.AssetAssignment, { foreignKey: 'asset_id', as: 'Assignments' });

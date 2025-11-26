@@ -6,14 +6,14 @@ const db = {};
 
 const { sequelize } = require('../config/database');
 
-// Read all model files from models directory
+// Read  directory
 fs.readdirSync(__dirname)
   .filter(file => {
     return (
-      file.indexOf('.') !== 0 &&
+      file.indexOf('.') !== 0 &&   //skiped hidden files 
       file !== basename &&
-      file.slice(-3) === '.js' &&
-      file.indexOf('.test.js') === -1
+      file.slice(-3) === '.js' &&   //only .js file
+      file.indexOf('.test.js') === -1 //skipped test files
     );
   })
   .forEach(file => {
@@ -21,7 +21,7 @@ fs.readdirSync(__dirname)
     db[model.name] = model;
   });
 
-// Also load models from other directories
+// load  other model  directories
 const additionalModelPaths = [
   ['..', 'asset', 'assetModel.js'],
   ['..', 'assetAssignment', 'assetAssignmentModel.js'],
@@ -37,13 +37,14 @@ additionalModelPaths.forEach(modelPathArray => {
   }
 });
 
-// Associate models if associations are defined
+//setup associate
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
 });
 
+//sequelize all model
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 

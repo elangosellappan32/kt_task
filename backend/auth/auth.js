@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 
-// Login Page
+// get login
 router.get('/login', (req, res) => res.render('auth/login'));
 
-// Login Handle
+// check login using post route
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', {
     successRedirect: '/dashboard',
@@ -14,7 +14,7 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
-// Logout Handle
+// Logout route 
 router.get('/logout', (req, res, next) => {
   req.logout((err) => {
     if (err) { 

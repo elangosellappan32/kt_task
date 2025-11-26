@@ -1,10 +1,10 @@
 const db = require('../models');
 const { Op } = require('sequelize');
 
-// Stock View - Bird's eye view of assets in stock
+// display Stock in birds eye 
 exports.stockView = async (req, res) => {
   try {
-    // Get all available assets (not assigned, not retired)
+    //fetch all available asset 
     const availableAssets = await db.Asset.findAll({
       where: {
         status: 'available',
@@ -17,7 +17,7 @@ exports.stockView = async (req, res) => {
       order: [['branch', 'ASC'], ['name', 'ASC']]
     });
 
-    // Group assets by branch
+    //set asset fetch  by branch 
     const assetsByBranch = {};
     let totalValue = 0;
 
@@ -39,7 +39,8 @@ exports.stockView = async (req, res) => {
       totalValue += assetValue;
     });
 
-    // Get category-wise summary
+    // display category summary
+
     const categorySummary = {};
     availableAssets.forEach(asset => {
       const categoryName = asset.Category ? asset.Category.name : 'Uncategorized';
@@ -62,7 +63,7 @@ exports.stockView = async (req, res) => {
   }
 };
 
-// API endpoint for stock data (for AJAX calls)
+//ajax call for stock data 
 exports.stockData = async (req, res) => {
   try {
     const { branch } = req.query;

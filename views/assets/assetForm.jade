@@ -3,84 +3,141 @@ extends ../layout
 block content
   .container-fluid.px-4
     .d-flex.justify-content-between.align-items-center.mb-4
-      h1.mb-0 #{asset ? 'Edit Asset' : 'Add New Asset'}
+      h1.mb-0 #{asset ? 'Edit Asset' : 'Add Asset'}
       a.btn.btn-secondary(href='/assets')
         i.fas.fa-arrow-left.me-2
-        | Back to Assets
-    
+        | Back to asset
+
     .card
       .card-body
         if error
           .alert.alert-danger.alert-dismissible.fade.show(role='alert')
             = error
             button.btn-close(type='button', data-bs-dismiss='alert')
-        
+
         form(method='POST', action=asset ? `/assets/${asset.id}?_method=PUT` : '/assets')
           .row.g-3
+
             .col-md-6
               label.form-label
                 i.fas.fa-tag.me-1
                 | Asset Tag
-                small.text-muted.d-block (Auto-generated)
-              input.form-control(type='text', name='asset_tag', value=asset && asset.asset_tag ? asset.asset_tag : '', placeholder='Will be auto-generated', readonly=asset ? null : 'readonly', required=asset ? 'required' : null)
-            
+                small.text-muted.d-block (This will be generated automatically)
+              input.form-control(
+                type='text'
+                name='asset_tag'
+                value=asset && asset.asset_tag ? asset.asset_tag : ''
+                placeholder='Auto-generated'
+                readonly=asset ? null : 'readonly'
+                required=asset ? 'required' : null
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-qrcode.me-1
                 | Serial Number *
-              input.form-control(type='text', name='serial_number', value=asset && asset.serial_number ? asset.serial_number : '', required, placeholder='SN123456789')
-            
+              input.form-control(
+                type='text'
+                name='serial_number'
+                value=asset && asset.serial_number ? asset.serial_number : ''
+                placeholder='Example: SN123456'
+                required
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-box.me-1
                 | Asset Name *
-              input.form-control(type='text', name='name', value=asset && asset.name ? asset.name : '', required)
-            
+              input.form-control(
+                type='text'
+                name='name'
+                value=asset && asset.name ? asset.name : ''
+                required
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-cube.me-1
                 | Model
-              input.form-control(type='text', name='model', value=asset && asset.model ? asset.model : '')
-            
+              input.form-control(
+                type='text'
+                name='model'
+                value=asset && asset.model ? asset.model : ''
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-industry.me-1
                 | Manufacturer
-              input.form-control(type='text', name='manufacturer', value=asset && asset.manufacturer ? asset.manufacturer : '')
-            
+              input.form-control(
+                type='text'
+                name='manufacturer'
+                value=asset && asset.manufacturer ? asset.manufacturer : ''
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-tags.me-1
                 | Category *
               select.form-select(name='category_id', required)
-                option(value='') Select Category
+                option(value='') Choose a category
                 each category in categories
-                  option(value=category.id, selected=asset && asset.category_id === category.id)= category.name
-            
+                  option(
+                    value=category.id
+                    selected=asset && asset.category_id === category.id
+                  )= category.name
+
             .col-md-6
               label.form-label
                 i.fas.fa-calendar.me-1
                 | Purchase Date *
-              input.form-control(type='date', name='purchase_date', value=asset && asset.purchase_date ? new Date(asset.purchase_date).toISOString().split('T')[0] : '', required)
-            
+              input.form-control(
+                type='date'
+                name='purchase_date'
+                value=asset && asset.purchase_date
+                  ? new Date(asset.purchase_date).toISOString().split('T')[0]
+                  : ''
+                required
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-dollar-sign.me-1
                 | Purchase Cost (₹)
-              input.form-control(type='number', step='0.01', min='0', name='purchase_cost', value=asset && asset.purchase_cost ? asset.purchase_cost : '', placeholder='0.00')
-            
+              input.form-control(
+                type='number'
+                step='0.01'
+                min='0'
+                name='purchase_cost'
+                value=asset && asset.purchase_cost ? asset.purchase_cost : ''
+                placeholder='0.00'
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-wallet.me-1
                 | Current Value (₹)
-              input.form-control(type='number', step='0.01', min='0', name='current_value', value=asset && asset.current_value ? asset.current_value : '', placeholder='0.00')
-            
+              input.form-control(
+                type='number'
+                step='0.01'
+                min='0'
+                name='current_value'
+                value=asset && asset.current_value ? asset.current_value : ''
+                placeholder='0.00'
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-shield-alt.me-1
                 | Warranty (months)
-              input.form-control(type='number', min='0', name='warranty_months', value=asset && asset.warranty_months ? asset.warranty_months : '', placeholder='12')
-            
+              input.form-control(
+                type='number'
+                min='0'
+                name='warranty_months'
+                value=asset && asset.warranty_months ? asset.warranty_months : ''
+                placeholder='12'
+              )
+
             .col-md-6
               label.form-label
                 i.fas.fa-toggle-on.me-1
@@ -90,35 +147,52 @@ block content
                 option(value='assigned', selected=asset && asset.status === 'assigned') Assigned
                 option(value='under_maintenance', selected=asset && asset.status === 'under_maintenance') Under Maintenance
                 option(value='retired', selected=asset && asset.status === 'retired') Retired
-            
+
             .col-md-6
               label.form-label
                 i.fas.fa-building.me-1
                 | Branch *
-              input.form-control(type='text', name='branch', value=asset && asset.branch ? asset.branch : '', required, placeholder='Chennai, Mumbai, etc.')
-            
+              input.form-control(
+                type='text'
+                name='branch'
+                value=asset && asset.branch ? asset.branch : ''
+                placeholder='e.g., Chennai, Mumbai'
+                required
+              )
+
             .col-md-12
               label.form-label
                 i.fas.fa-map-marker-alt.me-1
                 | Location *
-              input.form-control(type='text', name='location', value=asset && asset.location ? asset.location : '', required, placeholder='Room 101, Floor 1')
-            
+              input.form-control(
+                type='text'
+                name='location'
+                value=asset && asset.location ? asset.location : ''
+                placeholder='Floor/Room details'
+                required
+              )
+
             .col-md-12
               label.form-label
                 i.fas.fa-sticky-note.me-1
                 | Notes
               textarea.form-control(name='notes', rows='3')= asset && asset.notes ? asset.notes : ''
-            
+
             .col-md-12
               .form-check
-                input.form-check-input(type='checkbox', name='is_active', id='isActive', checked=asset ? (asset.is_active !== false) : 'checked')
+                input.form-check-input(
+                  type='checkbox'
+                  name='is_active'
+                  id='isActive'
+                  checked=asset ? (asset.is_active !== false) : 'checked'
+                )
                 label.form-check-label(for='isActive') Active
-            
+
             .col-md-12.mt-4
               .d-flex.gap-2
                 button.btn.btn-primary(type='submit')
                   i.fas.fa-save.me-2
-                  | #{asset ? 'Update Asset' : 'Create Asset'}
+                  | #{asset ? 'Update' : 'Create'}
                 a.btn.btn-secondary(href='/assets')
                   i.fas.fa-times.me-2
                   | Cancel
