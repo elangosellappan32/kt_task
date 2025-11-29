@@ -1,0 +1,16 @@
+insert table:
+insert  into  customers values (7,"prasanna","kumar",21,"india")
+
+update table:
+update orders set amount = 110
+ where order_id = 3;
+
+delete table:
+delete from orders 
+where order_id = 2
+
+join table 
+
+SELECT  c.customer_id  FROM customers c JOIN orders o ON c.customer_id = o.customer_id;
+
+

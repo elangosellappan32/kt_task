@@ -1,4 +1,4 @@
-//validate auth for admin
+//validate auth for admin 
 exports.ensureAuthenticated = (req, res, next) => {
   if (req.isAuthenticated()) {
     return next();
