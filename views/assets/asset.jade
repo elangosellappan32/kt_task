@@ -135,24 +135,7 @@ block content
                       button.btn.btn-outline-danger.delete-asset(type='button' data-id=asset.id title='Delete')
                         i.fas.fa-trash
     
-    // Pagination
-    if totalPages > 1
-      .d-flex.justify-content-between.align-items-center
-        // Shows current page information
-        span.text-muted Showing #{(currentPage - 1) * limit + 1} to #{Math.min(currentPage * limit, totalCount)} of #{totalCount} assets
-        // Pagination navigation
-        nav
-          ul.pagination.mb-0
-            // Previous page button
-            li.page-item(class=currentPage === 1 ? 'disabled' : '')
-              a.page-link(href=`?page=${currentPage - 1}&search=${searchQuery}&category=${selectedCategory}&status=${selectedStatus}&branch=${selectedBranch}&sortBy=${sortBy}&sortOrder=${sortOrder}`) Previous
-            // Page number button
-            - for(var i = 1; i <= totalPages; i++)
-              li.page-item(class=i === currentPage ? 'active' : '')
-                a.page-link(href=`?page=${i}&search=${searchQuery}&category=${selectedCategory}&status=${selectedStatus}&branch=${selectedBranch}&sortBy=${sortBy}&sortOrder=${sortOrder}`)= i
-            // Next page button 
-            li.page-item(class=currentPage === totalPages ? 'disabled' : '')
-              a.page-link(href=`?page=${currentPage + 1}&search=${searchQuery}&category=${selectedCategory}&status=${selectedStatus}&branch=${selectedBranch}&sortBy=${sortBy}&sortOrder=${sortOrder}`) Next
+    // DataTables handles pagination, so remove server-side pagination
     
     // Delete Confirmation Modal 
     #deleteAssetModal.modal.fade(tabindex='-1')
@@ -179,7 +162,13 @@ block content
           // Initialize DataTable 
           if (!$.fn.DataTable.isDataTable('#assetsTable')) {
             const table = $('#assetsTable').DataTable({
-              pageLength: 10
+              pageLength: 10,
+              paging: true,
+              info: true,
+              searching: true,
+              language: {
+                info: "Showing _START_ to _END_ of _TOTAL_ assets (Page _PAGE_ of _PAGES_)"
+              }
             });
           }
           
